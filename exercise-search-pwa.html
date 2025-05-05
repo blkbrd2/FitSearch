@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exercise Search</title>
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 2rem;
+      background-color: #1e1e2f;
+      color: #f5f5f5;
+    }
+    input, select, label {
+      padding: 0.5rem;
+      margin: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #2c2c3c;
+      color: #fff;
+    }
+    input::placeholder {
+      color: #aaa;
+    }
+    select {
+      appearance: none;
+    }
+    .exercise-card {
+      background-color: #2a2a3a;
+      border: 1px solid #444;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 10px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+    .exercise-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    .exercise-card h2 {
+      margin-top: 0;
+      color: #ffb347;
+    }
+    .exercise-card p {
+      margin: 0.25rem 0;
+    }
+    .favorite-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #ffb347;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .favorite-btn.active {
+      color: #ff4081;
+    }
+  </style>
+</head>
+<body>
+  <h1>Exercise Search</h1>
+
+  <input type="text" id="searchInput" placeholder="Search by name or description">
+  <select id="muscleSelect">
+    <option value="All">All Muscles</option>
+    <option value="Chest">Chest</option>
+    <option value="Back">Back</option>
+    <option value="Shoulders">Shoulders</option>
+    <option value="Biceps">Biceps</option>
+    <option value="Triceps">Triceps</option>
+    <option value="Core">Core</option>
+    <option value="Glutes">Glutes</option>
+    <option value="Quads">Quads</option>
+    <option value="Hamstrings">Hamstrings</option>
+  </select>
+  <select id="equipmentSelect">
+    <option value="All">All Equipment</option>
+    <option value="TRX">TRX</option>
+    <option value="Dumbbells">Dumbbells</option>
+    <option value="Cables">Cables</option>
+    <option value="Floor">Floor</option>
+    <option value="Bench">Bench</option>
+    <option value="Exercise Ball">Exercise Ball</option>
+  </select>
+  <select id="movementSelect">
+    <option value="All">All Movements</option>
+    <option value="Push">Push</option>
+    <option value="Pull">Pull</option>
+    <option value="Hold">Hold</option>
+    <option value="Hinge">Hinge</option>
+    <option value="Squat">Squat</option>
+    <option value="Lunge">Lunge</option>
+    <option value="Rotation">Rotation</option>
+    <option value="Multiple">Multiple</option>
+  </select>
+  <label><input type="checkbox" id="favoritesOnly"> Favorites Only</label>
+
+  <div id="results"></div>
+
+  <script src="exercises_data_with_movement.js"></script>
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const muscleSelect = document.getElementById('muscleSelect');
+    const equipmentSelect = document.getElementById('equipmentSelect');
+    const movementSelect = document.getElementById('movementSelect');
+    const favoritesOnlyCheckbox = document.getElementById('favoritesOnly');
+    const results = document.getElementById('results');
+
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+    function toggleFavorite(exName) {
+      const index = favorites.indexOf(exName);
+      if (index > -1) {
+        favorites.splice(index, 1);
+      } else {
+        favorites.push(exName);
+      }
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      filterExercises();
+    }
+
+    function displayExercises(list) {
+      results.innerHTML = '';
+      if (list.length === 0) {
+        results.innerHTML = '<p>No exercises found.</p>';
+        return;
+      }
+      list.forEach(ex => {
+        const isFav = favorites.includes(ex.exercise_name);
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        card.innerHTML = `
+          <button class="favorite-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ex.exercise_name.replace(/'/g, "\'")}')">
+            ${isFav ? '★' : '☆'}
+          </button>
+          <h2>${ex.exercise_name}</h2>
+          <p><strong>Muscle:</strong> ${ex.primary_muscle_group}</p>
+          <p><strong>Equipment:</strong> ${ex.equipment_needed}</p>
+          <p><strong>Movement:</strong> ${ex.movement_type}</p>
+          <p>${ex.description}</p>`;
+        results.appendChild(card);
+      });
+    }
+
+    function filterExercises() {
+      const search = searchInput.value.toLowerCase();
+      const muscle = muscleSelect.value;
+      const equipment = equipmentSelect.value;
+      const movement = movementSelect.value;
+      const favoritesOnly = favoritesOnlyCheckbox.checked;
+
+      const filtered = exercises.filter(ex => {
+        return (
+          (!favoritesOnly || favorites.includes(ex.exercise_name)) &&
+          (muscle === "All" || ex.primary_muscle_group === muscle) &&
+          (equipment === "All" || ex.equipment_needed.includes(equipment)) &&
+          (movement === "All" || ex.movement_type === movement) &&
+          (ex.exercise_name.toLowerCase().includes(search) ||
+           ex.description.toLowerCase().includes(search))
+        );
+      });
+
+      displayExercises(filtered);
+    }
+
+    searchInput.addEventListener('input', filterExercises);
+    muscleSelect.addEventListener('change', filterExercises);
+    equipmentSelect.addEventListener('change', filterExercises);
+    movementSelect.addEventListener('change', filterExercises);
+    favoritesOnlyCheckbox.addEventListener('change', filterExercises);
+
+    displayExercises(exercises);
+  </script>
+</body>
+</html>
