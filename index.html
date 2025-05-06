@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +12,8 @@
       navigator.serviceWorker.register('service-worker.js');
     }
   </script>
+  <!-- ✅ Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -109,8 +110,13 @@
 
   <div id="results"></div>
 
-  <script src="exercises_data_with_movement.js"></script>
   <script>
+    // ✅ Supabase Client Init
+    const supabase = supabase.createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'YOUR_SUPABASE_ANON_KEY_HERE'
+    );
+
     const searchInput = document.getElementById('searchInput');
     const muscleSelect = document.getElementById('muscleSelect');
     const equipmentSelect = document.getElementById('equipmentSelect');
@@ -130,6 +136,8 @@
       localStorage.setItem('favorites', JSON.stringify(favorites));
       filterExercises();
     }
+
+    let exercises = [];
 
     function displayExercises(list) {
       results.innerHTML = '';
@@ -181,7 +189,7 @@
     movementSelect.addEventListener('change', filterExercises);
     favoritesOnlyCheckbox.addEventListener('change', filterExercises);
 
-    displayExercises(exercises);
+    displayExercises([]); // Placeholder until we fetch
   </script>
 </body>
 </html>
