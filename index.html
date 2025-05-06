@@ -22,9 +22,9 @@
       color: #f5f5f5;
     }
     input, select, label {
-      padding: 0.575rem; /* Increased by ~15% */
-      margin: 0.575rem;  /* Increased by ~15% */
-      font-size: 1.15rem; /* Increased font size by ~15% */
+      padding: 0.575rem;
+      margin: 0.575rem;
+      font-size: 1.15rem;
       border-radius: 6px;
       border: none;
       background-color: #2c2c3c;
@@ -112,7 +112,6 @@
   <div id="results"></div>
 
   <script>
-    // ✅ Supabase Client Init
     const supabase = supabase.createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
@@ -184,13 +183,28 @@
       displayExercises(filtered);
     }
 
+    async function loadExercises() {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*');
+
+      if (error) {
+        console.error('Failed to fetch exercises:', error.message);
+        results.innerHTML = `<p>Error loading exercises.</p>`;
+        return;
+      }
+
+      exercises = data;
+      filterExercises();
+    }
+
     searchInput.addEventListener('input', filterExercises);
     muscleSelect.addEventListener('change', filterExercises);
     equipmentSelect.addEventListener('change', filterExercises);
     movementSelect.addEventListener('change', filterExercises);
     favoritesOnlyCheckbox.addEventListener('change', filterExercises);
 
-    displayExercises([]); // Placeholder until we fetch
+    loadExercises();
   </script>
 </body>
 </html>
