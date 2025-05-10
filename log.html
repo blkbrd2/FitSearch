@@ -121,7 +121,7 @@
       <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
 
       <div id="entries">
-        <!-- exercise rows injected here -->
+        <!-- injected rows -->
       </div>
 
       <button type="button" id="addEntry">+ Add Exercise</button>
@@ -140,26 +140,19 @@
     let userId, exercises = [];
 
     async function init() {
-      // restore session & redirect if none
-      const { data:{ session }, error: sessionErr } = await supabase.auth.getSession();
-      if (sessionErr || !session) {
-        window.location.replace('login.html');
-        return;
-      }
+      const { data:{ session }, error } = await supabase.auth.getSession();
+      if (error || !session) return window.location.replace('login.html');
       userId = session.user.id;
 
-      // fetch master exercise list
       const { data, error: exErr } = await supabase
         .from('exercises')
         .select('id, exercise_name');
       if (exErr) console.error(exErr);
       else exercises = data;
 
-      // default date & first row
       document.getElementById('date').valueAsDate = new Date();
       addEntryRow();
 
-      // bind buttons
       document.getElementById('addEntry').addEventListener('click', addEntryRow);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
     }
@@ -170,7 +163,7 @@
       row.innerHTML = `
         <select class="exercise_id" required>
           <option value="">— choose exercise —</option>
-          ${exercises.map(e => `<option value="${e.id}">${e.exercise_name}</option>`).join('')}
+          ${exercises.map(e => `<option value="${e.id}">${e.exercise_name}</option>`).join("")}
         </select>
         <input type="number" class="sets" placeholder="Sets" min="1" required />
         <input type="number" class="reps" placeholder="Reps" min="1" required />
@@ -187,37 +180,44 @@
       const date  = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
 
-      const entriesPayload = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
+      const rows = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
         exercise_id: r.querySelector('.exercise_id').value,
         sets:        parseInt(r.querySelector('.sets').value, 10),
         reps:        parseInt(r.querySelector('.reps').value, 10),
         weight:      parseFloat(r.querySelector('.weight').value) || 0
       }));
-      if (!entriesPayload.length) {
-        return showStatus('Add at least one exercise!', 'red');
+      if (!rows.length) {
+        showStatus('Add at least one exercise!', 'red');
+        return;
       }
 
-      // insert workout session, mapping userId correctly
-      const { data: workout, error: wErr } = await supabase
+      // INSERT workout & RETURN the new row
+      const { data: workoutArr, error: wErr } = await supabase
         .from('workouts')
-        .insert([{ user_id: userId, date, type, notes }])
-        .select()
-        .single();
+        .insert(
+          [{ user_id: userId, date, type, notes }],
+          { returning: 'representation' }
+        );
       if (wErr) {
-        return showStatus('Failed to save workout.', 'red');
+        showStatus('Failed to save workout.', 'red');
+        return;
       }
+      const workout = workoutArr[0];
 
-      // insert child entries
-      const childRows = entriesPayload.map(e => ({
+      // INSERT child entries
+      const childRows = rows.map(r => ({
         workout_id:  workout.id,
-        exercise_id: e.exercise_id,
-        sets:        e.sets,
-        reps:        e.reps,
-        weight:      e.weight
+        exercise_id: r.exercise_id,
+        sets:        r.sets,
+        reps:        r.reps,
+        weight:      r.weight
       }));
-      const { error: eErr } = await supabase.from('workout_intries').insert(childRows);
+      const { error: eErr } = await supabase
+        .from('workout_entries')
+        .insert(childRows);
       if (eErr) {
-        return showStatus('Failed to save exercises.', 'red');
+        showStatus('Failed to save exercises.', 'red');
+        return;
       }
 
       showStatus('Workout logged! 🎉', 'lightgreen');
@@ -226,7 +226,7 @@
     function showStatus(msg, color) {
       const st = document.getElementById('status');
       st.textContent = msg;
-      st.style.color   = color;
+      st.style.color = color;
     }
 
     document.addEventListener('DOMContentLoaded', init);
