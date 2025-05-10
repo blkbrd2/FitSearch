@@ -104,39 +104,42 @@
 
       userId = user.id;
 
-      // Try to fetch the profile (use maybeSingle to avoid hard error)
       let { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
-      // If no profile, insert one
       if (!profile) {
-        const { error: insertError } = await supabase.from("profiles").insert([{ user_id: userId }]);
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert([{ user_id: userId }]);
+
         if (insertError) {
           console.error(insertError);
           document.getElementById('status').textContent = "Failed to create profile.";
           return;
         }
 
-        // Fetch the inserted row again
-        ({ data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .single());
+        // Fallback profile object for first-time users
+        profile = {
+          user_id: userId,
+          first_name: "",
+          last_name: "",
+          birthdate: null,
+          height_ft: null,
+          height_in: null,
+          gender: ""
+        };
       }
 
       // Populate the form
-      if (profile) {
-        document.getElementById("first_name").value = profile.first_name || "";
-        document.getElementById("last_name").value = profile.last_name || "";
-        document.getElementById("birthdate").value = profile.birthdate || "";
-        document.getElementById("height_ft").value = profile.height_ft || "";
-        document.getElementById("height_in").value = profile.height_in || "";
-        document.getElementById("gender").value = profile.gender || "";
-      }
+      document.getElementById("first_name").value = profile.first_name || "";
+      document.getElementById("last_name").value = profile.last_name || "";
+      document.getElementById("birthdate").value = profile.birthdate || "";
+      document.getElementById("height_ft").value = profile.height_ft || "";
+      document.getElementById("height_in").value = profile.height_in || "";
+      document.getElementById("gender").value = profile.gender || "";
     }
 
     document.getElementById("profileForm").addEventListener("submit", async (e) => {
