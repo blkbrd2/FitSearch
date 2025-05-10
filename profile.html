@@ -5,10 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FreeFit Profile</title>
   <style>
+    /* ===== Global ===== */
     body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
       background-color: #1e1e2f;
       color: #fff;
-      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* ===== Navbar ===== */
+    nav {
+      background: #292946;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    nav a {
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    nav a:hover {
+      background: #3a3a5a;
+    }
+    nav a.active {
+      background: #ffb347;
+      color: #1e1e2f;
+    }
+
+    /* ===== Page Content ===== */
+    main {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -16,10 +53,11 @@
     }
     h2 {
       color: #ffb347;
+      margin-top: 0;
     }
     form {
-      max-width: 400px;
       width: 100%;
+      max-width: 400px;
       display: flex;
       flex-direction: column;
     }
@@ -33,6 +71,7 @@
       border: none;
       background-color: #2c2c3c;
       color: #fff;
+      font-size: 1rem;
     }
     button {
       margin-top: 2rem;
@@ -42,6 +81,7 @@
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 1rem;
     }
     #status {
       margin-top: 1rem;
@@ -50,35 +90,47 @@
   </style>
 </head>
 <body>
-  <h2>Edit Your Profile</h2>
-  <form id="profileForm">
-    <label for="first_name">First Name</label>
-    <input type="text" id="first_name" />
+  <!-- NAVBAR -->
+  <nav>
+    <a href="index.html">🏠 Home</a>
+    <a href="profile.html" class="active">👤 Profile</a>
+    <a href="workouts.html">💪 Workouts</a>
+    <a href="log.html">📝 Log Entry</a>
+    <a href="metrics.html">📊 Metrics</a>
+  </nav>
 
-    <label for="last_name">Last Name</label>
-    <input type="text" id="last_name" />
+  <!-- PAGE CONTENT -->
+  <main>
+    <h2>Edit Your Profile</h2>
+    <form id="profileForm">
+      <label for="first_name">First Name</label>
+      <input type="text" id="first_name" placeholder="e.g. Jane" />
 
-    <label for="birthdate">Birth Year</label>
-    <input type="number" id="birthdate" placeholder="e.g. 1985" />
+      <label for="last_name">Last Name</label>
+      <input type="text" id="last_name" placeholder="e.g. Doe" />
 
-    <label for="height_ft">Height (ft)</label>
-    <input type="number" id="height_ft" />
+      <label for="birthdate">Birth Year</label>
+      <input type="number" id="birthdate" placeholder="e.g. 1985" />
 
-    <label for="height_in">Height (in)</label>
-    <input type="number" id="height_in" />
+      <label for="height_ft">Height (ft)</label>
+      <input type="number" id="height_ft" placeholder="e.g. 5" />
 
-    <label for="gender">Gender</label>
-    <select id="gender">
-      <option value="">-- Select --</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-      <option value="Other">Other</option>
-      <option value="Prefer not to say">Prefer not to say</option>
-    </select>
+      <label for="height_in">Height (in)</label>
+      <input type="number" id="height_in" placeholder="e.g. 11" />
 
-    <button type="submit">Save Profile</button>
-    <p id="status"></p>
-  </form>
+      <label for="gender">Gender</label>
+      <select id="gender">
+        <option value="">-- Select --</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+        <option value="Prefer not to say">Prefer not to say</option>
+      </select>
+
+      <button type="submit">Save Profile</button>
+      <p id="status"></p>
+    </form>
+  </main>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -91,7 +143,6 @@
     let userId = null;
 
     async function loadProfile() {
-      // 1) get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         window.location.href = "login.html";
@@ -99,25 +150,24 @@
       }
       userId = user.id;
 
-      // 2) minimal upsert: only ensure a row exists for this user_id
+      // ensure a row exists, then grab it
       const { data: profile, error } = await supabase
         .from("profiles")
         .upsert(
-          [{ user_id: userId }],        // only user_id → won't overwrite other columns
-          { onConflict: ["user_id"] }    // PK conflict key
+          [{ user_id: userId }],
+          { onConflict: ["user_id"] }
         )
-        .select()                       // then fetch
+        .select()
         .single();
 
       if (error) {
         console.error(error);
         const st = document.getElementById("status");
         st.textContent = "Error loading profile.";
-        st.style.color = "#ff8080";
+        st.style.color   = "#ff8080";
         return;
       }
 
-      // 3) populate form fields
       document.getElementById("first_name").value = profile.first_name || "";
       document.getElementById("last_name").value  = profile.last_name  || "";
       document.getElementById("birthdate").value  = profile.birthdate   || "";
@@ -129,12 +179,12 @@
     async function saveProfile(e) {
       e.preventDefault();
       const updates = {
-        first_name:  document.getElementById("first_name").value,
-        last_name:   document.getElementById("last_name").value,
-        birthdate:   parseInt(document.getElementById("birthdate").value, 10),
-        height_ft:   parseInt(document.getElementById("height_ft").value, 10),
-        height_in:   parseInt(document.getElementById("height_in").value, 10),
-        gender:      document.getElementById("gender").value,
+        first_name: document.getElementById("first_name").value,
+        last_name:  document.getElementById("last_name").value,
+        birthdate:  parseInt(document.getElementById("birthdate").value, 10),
+        height_ft:  parseInt(document.getElementById("height_ft").value, 10),
+        height_in:  parseInt(document.getElementById("height_in").value, 10),
+        gender:     document.getElementById("gender").value,
       };
 
       const { error } = await supabase
