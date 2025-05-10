@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>FreeFit – Log Workout</title>
   <style>
     /* ===== Global Dark Theme ===== */
@@ -15,10 +15,7 @@
       flex-direction: column;
       min-height: 100vh;
     }
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    a { color: inherit; text-decoration: none; }
 
     /* ===== Navbar ===== */
     nav {
@@ -35,9 +32,7 @@
       border-radius: 4px;
       transition: background 0.2s;
     }
-    nav a:hover {
-      background: #3a3a5a;
-    }
+    nav a:hover { background: #3a3a5a; }
     nav a.active {
       background: #ffb347;
       color: #1e1e2f;
@@ -49,18 +44,13 @@
       max-width: 600px;
       margin: 2rem auto;
     }
-    h2 {
-      color: #ffb347;
-      margin-top: 0;
-    }
+    h2 { color: #ffb347; margin-top: 0; }
     form label {
       display: block;
       margin-top: 1rem;
       font-weight: 600;
     }
-    form input,
-    form select,
-    form textarea {
+    form input, form select, form textarea {
       width: 100%;
       padding: 0.75rem;
       margin-top: 0.25rem;
@@ -103,18 +93,9 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    #addEntry {
-      background: #4477ff;
-      color: #fff;
-    }
-    #saveWorkout {
-      background: #ffb347;
-      color: #1e1e2f;
-    }
-    #status {
-      margin-top: 1rem;
-      font-weight: bold;
-    }
+    #addEntry { background: #4477ff; color: #fff; }
+    #saveWorkout { background: #ffb347; color: #1e1e2f; }
+    #status { margin-top: 1rem; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -152,6 +133,7 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
@@ -160,16 +142,21 @@
     let userId, exercises = [];
 
     async function init() {
-      const { data: { user }, error: authErr } = await supabase.auth.getUser();
-      if (authErr || !user) return window.location.replace('login.html');
-      userId = user.id;
+      // 1) restore session & grab user
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr || !session) {
+        return window.location.replace('login.html');
+      }
+      userId = session.user.id;
 
+      // 2) load master exercise list
       const { data, error: exErr } = await supabase
         .from('exercises')
         .select('id, exercise_name');
       if (exErr) console.error(exErr);
       else exercises = data;
 
+      // 3) default date + first row
       document.getElementById('date').valueAsDate = new Date();
       addEntryRow();
     }
