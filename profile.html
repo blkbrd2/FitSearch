@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FreeFit Profile</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       background-color: #1e1e2f;
@@ -65,8 +64,8 @@
     <label for="last_name">Last Name</label>
     <input type="text" id="last_name" />
 
-    <label for="birthdate">Birth Year</label>
-    <input type="number" id="birthdate" placeholder="e.g. 1985" />
+    <label for="date_of_birth">Birth Year</label>
+    <input type="number" id="date_of_birth" placeholder="e.g. 1985" />
 
     <label for="height_ft">Height (ft)</label>
     <input type="number" id="height_ft" />
@@ -87,8 +86,10 @@
     <p id="status"></p>
   </form>
 
-  <script>
-    const supabase = window.supabase.createClient(
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
@@ -96,7 +97,7 @@
     let userId = null;
 
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (!user) {
         window.location.href = "login.html";
         return;
@@ -113,40 +114,30 @@
       let profile = existingRows?.[0];
 
       if (!profile) {
-        const { data: confirm, error: confirmErr } = await supabase
+        const { error: insertError } = await supabase
           .from("profiles")
-          .select("user_id")
-          .eq("user_id", userId)
-          .maybeSingle();
+          .insert([{ user_id: userId }]);
 
-        if (confirm) {
-          profile = confirm;
-        } else {
-          const { error: insertError } = await supabase
-            .from("profiles")
-            .insert([{ user_id: userId }]);
-
-          if (insertError) {
-            console.error(insertError);
-            document.getElementById('status').textContent = "Failed to create profile.";
-            return;
-          }
-
-          profile = {
-            user_id: userId,
-            first_name: "",
-            last_name: "",
-            birthdate: null,
-            height_ft: null,
-            height_in: null,
-            gender: ""
-          };
+        if (insertError) {
+          console.error(insertError);
+          document.getElementById('status').textContent = "Failed to create profile.";
+          return;
         }
+
+        profile = {
+          user_id: userId,
+          first_name: "",
+          last_name: "",
+          date_of_birth: null,
+          height_ft: null,
+          height_in: null,
+          gender: ""
+        };
       }
 
       document.getElementById("first_name").value = profile.first_name || "";
       document.getElementById("last_name").value = profile.last_name || "";
-      document.getElementById("birthdate").value = profile.birthdate || "";
+      document.getElementById("date_of_birth").value = profile.date_of_birth ? new Date(profile.date_of_birth).getFullYear() : "";
       document.getElementById("height_ft").value = profile.height_ft || "";
       document.getElementById("height_in").value = profile.height_in || "";
       document.getElementById("gender").value = profile.gender || "";
@@ -159,7 +150,7 @@
         user_id: userId,
         first_name: document.getElementById("first_name").value,
         last_name: document.getElementById("last_name").value,
-        birthdate: parseInt(document.getElementById("birthdate").value),
+        date_of_birth: `${document.getElementById("date_of_birth").value}-01-01`,
         height_ft: parseInt(document.getElementById("height_ft").value),
         height_in: parseInt(document.getElementById("height_in").value),
         gender: document.getElementById("gender").value,
