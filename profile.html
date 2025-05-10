@@ -58,8 +58,8 @@
     <label for="last_name">Last Name</label>
     <input type="text" id="last_name" />
 
-    <label for="date_of_birth">Birth Year</label>
-    <input type="number" id="date_of_birth" placeholder="e.g. 1985" />
+    <label for="birthdate">Birth Year</label>
+    <input type="number" id="birthdate" placeholder="e.g. 1985" />
 
     <label for="height_ft">Height (ft)</label>
     <input type="number" id="height_ft" />
@@ -99,51 +99,42 @@
       }
       userId = user.id;
 
-      // 2) upsert a blank/default profile and fetch it in one go
+      // 2) minimal upsert: only ensure a row exists for this user_id
       const { data: profile, error } = await supabase
         .from("profiles")
         .upsert(
-          {
-            user_id:       userId,
-            first_name:    "",
-            last_name:     "",
-            date_of_birth: null,
-            height_ft:     null,
-            height_in:     null,
-            gender:        ""
-          },
-          { onConflict: ["user_id"] }
+          [{ user_id: userId }],        // only user_id → won't overwrite other columns
+          { onConflict: ["user_id"] }    // PK conflict key
         )
-        .select()
+        .select()                       // then fetch
         .single();
 
       if (error) {
         console.error(error);
-        document.getElementById("status").textContent = "Error loading profile.";
-        document.getElementById("status").style.color = "#ff8080";
+        const st = document.getElementById("status");
+        st.textContent = "Error loading profile.";
+        st.style.color = "#ff8080";
         return;
       }
 
       // 3) populate form fields
-      document.getElementById("first_name").value     = profile.first_name || "";
-      document.getElementById("last_name").value      = profile.last_name || "";
-      document.getElementById("date_of_birth").value  = profile.date_of_birth
-        ? new Date(profile.date_of_birth).getFullYear()
-        : "";
-      document.getElementById("height_ft").value      = profile.height_ft || "";
-      document.getElementById("height_in").value      = profile.height_in || "";
-      document.getElementById("gender").value         = profile.gender || "";
+      document.getElementById("first_name").value = profile.first_name || "";
+      document.getElementById("last_name").value  = profile.last_name  || "";
+      document.getElementById("birthdate").value  = profile.birthdate   || "";
+      document.getElementById("height_ft").value  = profile.height_ft   || "";
+      document.getElementById("height_in").value  = profile.height_in   || "";
+      document.getElementById("gender").value     = profile.gender      || "";
     }
 
     async function saveProfile(e) {
       e.preventDefault();
       const updates = {
-        first_name:    document.getElementById("first_name").value,
-        last_name:     document.getElementById("last_name").value,
-        date_of_birth: `${document.getElementById("date_of_birth").value}-01-01`,
-        height_ft:     parseInt(document.getElementById("height_ft").value, 10),
-        height_in:     parseInt(document.getElementById("height_in").value, 10),
-        gender:        document.getElementById("gender").value,
+        first_name:  document.getElementById("first_name").value,
+        last_name:   document.getElementById("last_name").value,
+        birthdate:   parseInt(document.getElementById("birthdate").value, 10),
+        height_ft:   parseInt(document.getElementById("height_ft").value, 10),
+        height_in:   parseInt(document.getElementById("height_in").value, 10),
+        gender:      document.getElementById("gender").value,
       };
 
       const { error } = await supabase
