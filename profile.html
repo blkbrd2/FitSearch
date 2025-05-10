@@ -113,25 +113,35 @@
       let profile = existingRows?.[0];
 
       if (!profile) {
-        const { error: insertError } = await supabase
+        const { data: confirm, error: confirmErr } = await supabase
           .from("profiles")
-          .insert([{ user_id: userId }]);
+          .select("user_id")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-        if (insertError) {
-          console.error(insertError);
-          document.getElementById('status').textContent = "Failed to create profile.";
-          return;
+        if (confirm) {
+          profile = confirm;
+        } else {
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert([{ user_id: userId }]);
+
+          if (insertError) {
+            console.error(insertError);
+            document.getElementById('status').textContent = "Failed to create profile.";
+            return;
+          }
+
+          profile = {
+            user_id: userId,
+            first_name: "",
+            last_name: "",
+            birthdate: null,
+            height_ft: null,
+            height_in: null,
+            gender: ""
+          };
         }
-
-        profile = {
-          user_id: userId,
-          first_name: "",
-          last_name: "",
-          birthdate: null,
-          height_ft: null,
-          height_in: null,
-          gender: ""
-        };
       }
 
       document.getElementById("first_name").value = profile.first_name || "";
