@@ -104,11 +104,13 @@
 
       userId = user.id;
 
-      let { data: profile, error } = await supabase
+      const { data: existingRows, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
-        .maybeSingle();
+        .limit(1);
+
+      let profile = existingRows?.[0];
 
       if (!profile) {
         const { error: insertError } = await supabase
@@ -121,7 +123,6 @@
           return;
         }
 
-        // Fallback profile object for first-time users
         profile = {
           user_id: userId,
           first_name: "",
@@ -133,7 +134,6 @@
         };
       }
 
-      // Populate the form
       document.getElementById("first_name").value = profile.first_name || "";
       document.getElementById("last_name").value = profile.last_name || "";
       document.getElementById("birthdate").value = profile.birthdate || "";
