@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FreeFit Profile</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    h2 {
+      color: #ffb347;
+    }
+
+    form {
+      max-width: 400px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    input, select {
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #2c2c3c;
+      color: #fff;
+    }
+
+    button {
+      margin-top: 2rem;
+      padding: 0.75rem;
+      background-color: #ffb347;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 1rem;
+      color: #90ee90;
+    }
+  </style>
+</head>
+<body>
+  <h2>Edit Your Profile</h2>
+  <form id="profileForm">
+    <label for="first_name">First Name</label>
+    <input type="text" id="first_name" />
+
+    <label for="last_name">Last Name</label>
+    <input type="text" id="last_name" />
+
+    <label for="birthdate">Birth Year</label>
+    <input type="number" id="birthdate" placeholder="e.g. 1985" />
+
+    <label for="height_ft">Height (ft)</label>
+    <input type="number" id="height_ft" />
+
+    <label for="height_in">Height (in)</label>
+    <input type="number" id="height_in" />
+
+    <label for="gender">Gender</label>
+    <select id="gender">
+      <option value="">-- Select --</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+      <option value="Other">Other</option>
+      <option value="Prefer not to say">Prefer not to say</option>
+    </select>
+
+    <button type="submit">Save Profile</button>
+    <p id="status"></p>
+  </form>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+    );
+
+    let userId = null;
+
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      userId = user.id;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) {
+        console.error(error);
+        document.getElementById('status').textContent = "Error loading profile.";
+        return;
+      }
+
+      if (data) {
+        document.getElementById("first_name").value = data.first_name || "";
+        document.getElementById("last_name").value = data.last_name || "";
+        document.getElementById("birthdate").value = data.birthdate || "";
+        document.getElementById("height_ft").value = data.height_ft || "";
+        document.getElementById("height_in").value = data.height_in || "";
+        document.getElementById("gender").value = data.gender || "";
+      }
+    }
+
+    document.getElementById("profileForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const updates = {
+        user_id: userId,
+        first_name: document.getElementById("first_name").value,
+        last_name: document.getElementById("last_name").value,
+        birthdate: parseInt(document.getElementById("birthdate").value),
+        height_ft: parseInt(document.getElementById("height_ft").value),
+        height_in: parseInt(document.getElementById("height_in").value),
+        gender: document.getElementById("gender").value,
+      };
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("user_id", userId);
+
+      const status = document.getElementById("status");
+      if (error) {
+        console.error(error);
+        status.textContent = "Error saving profile.";
+        status.style.color = "#ff8080";
+      } else {
+        status.textContent = "Profile updated successfully!";
+        status.style.color = "#90ee90";
+      }
+    });
+
+    loadProfile();
+  </script>
+</body>
+</html>
