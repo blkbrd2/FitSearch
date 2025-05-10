@@ -104,25 +104,38 @@
 
       userId = user.id;
 
-      const { data, error } = await supabase
+      // Try to fetch the profile (use maybeSingle to avoid hard error)
+      let { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error(error);
-        document.getElementById('status').textContent = "Error loading profile.";
-        return;
+      // If no profile, insert one
+      if (!profile) {
+        const { error: insertError } = await supabase.from("profiles").insert([{ user_id: userId }]);
+        if (insertError) {
+          console.error(insertError);
+          document.getElementById('status').textContent = "Failed to create profile.";
+          return;
+        }
+
+        // Fetch the inserted row again
+        ({ data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .single());
       }
 
-      if (data) {
-        document.getElementById("first_name").value = data.first_name || "";
-        document.getElementById("last_name").value = data.last_name || "";
-        document.getElementById("birthdate").value = data.birthdate || "";
-        document.getElementById("height_ft").value = data.height_ft || "";
-        document.getElementById("height_in").value = data.height_in || "";
-        document.getElementById("gender").value = data.gender || "";
+      // Populate the form
+      if (profile) {
+        document.getElementById("first_name").value = profile.first_name || "";
+        document.getElementById("last_name").value = profile.last_name || "";
+        document.getElementById("birthdate").value = profile.birthdate || "";
+        document.getElementById("height_ft").value = profile.height_ft || "";
+        document.getElementById("height_in").value = profile.height_in || "";
+        document.getElementById("gender").value = profile.gender || "";
       }
     }
 
