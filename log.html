@@ -2,39 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FreeFit – Log Workout</title>
   <style>
-    /* … your existing global + navbar styles … */
+    /* ===== Global Dark Theme ===== */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #1e1e2f;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
-    main { max-width:600px; margin:2rem auto; color:#fff; }
-    h2 { color:#ffb347; }
-    form label { display:block; margin-top:1rem; font-weight:600; }
-    form input, form select, form textarea {
-      width:100%; padding:.75rem; margin-top:.25rem;
-      border:none; border-radius:6px; background:#2c2c3c; color:#fff;
+    /* ===== Navbar ===== */
+    nav {
+      background: #292946;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-    #entries { margin-top:1rem; border-top:1px solid #444; padding-top:1rem; }
+    nav a {
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    nav a:hover {
+      background: #3a3a5a;
+    }
+    nav a.active {
+      background: #ffb347;
+      color: #1e1e2f;
+    }
+
+    /* ===== Page Content ===== */
+    main {
+      flex: 1;
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+    h2 {
+      color: #ffb347;
+      margin-top: 0;
+    }
+    form label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    form input,
+    form select,
+    form textarea {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.25rem;
+      border: none;
+      border-radius: 6px;
+      background: #2c2c3c;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    /* ===== Exercise Rows ===== */
+    #entries {
+      margin-top: 1rem;
+      border-top: 1px solid #444;
+      padding-top: 1rem;
+    }
     .entry-row {
-      display:grid;
-      grid-template-columns:2fr 1fr 1fr 1fr auto;
-      gap:.5rem; align-items:center; margin-bottom:.75rem;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
     }
-    .remove-entry { 
-      background:none; border:none; color:#ff6b6b;
-      font-size:1.5rem; cursor:pointer;
+    .remove-entry {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      font-size: 1.25rem;
+      cursor: pointer;
+      line-height: 1;
     }
-    #addEntry, #saveWorkout {
-      margin-top:1rem; padding:.75rem; font-size:1rem;
-      border:none; border-radius:6px; cursor:pointer;
+
+    /* ===== Buttons & Status ===== */
+    #addEntry,
+    #saveWorkout {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    #addEntry { background:#4477ff; color:#fff; }
-    #saveWorkout { background:#ffb347; color:#1e1e2f; }
-    #status { margin-top:1rem; font-weight:bold; }
+    #addEntry {
+      background: #4477ff;
+      color: #fff;
+    }
+    #saveWorkout {
+      background: #ffb347;
+      color: #1e1e2f;
+    }
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <!-- your <nav> … </nav> -->
+  <!-- NAVBAR -->
+  <nav>
+    <a href="landing.html">🏠 Home</a>
+    <a href="profile.html">👤 Profile</a>
+    <a href="workouts.html">💪 Workouts</a>
+    <a href="log.html" class="active">📝 Log Entry</a>
+    <a href="metrics.html">📊 Metrics</a>
+  </nav>
+
+  <!-- PAGE CONTENT -->
   <main>
     <h2>Log a New Workout</h2>
     <form id="logForm">
@@ -48,7 +141,7 @@
       <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
 
       <div id="entries">
-        <!-- entry rows go here -->
+        <!-- exercise-entry rows will be injected here -->
       </div>
 
       <button type="button" id="addEntry">+ Add Exercise</button>
@@ -61,14 +154,13 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+      '<YOUR_ANON_KEY_HERE>'
     );
 
     let userId, exercises = [];
 
-    // 1) Fetch user & master exercise list
     async function init() {
-      const { data:{user}, error: authErr } = await supabase.auth.getUser();
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
       if (authErr || !user) return window.location.replace('login.html');
       userId = user.id;
 
@@ -78,12 +170,10 @@
       if (exErr) console.error(exErr);
       else exercises = data;
 
-      // default date = today + first entry row
       document.getElementById('date').valueAsDate = new Date();
       addEntryRow();
     }
 
-    // 2) Add one exercise row (select exercise_id + sets/reps/weight)
     function addEntryRow() {
       const row = document.createElement('div');
       row.className = 'entry-row';
@@ -102,27 +192,20 @@
     }
     document.getElementById('addEntry').onclick = addEntryRow;
 
-    // 3) On submit: insert into workouts → then workout_intries
     document.getElementById('logForm').onsubmit = async e => {
       e.preventDefault();
       const type  = document.getElementById('type').value.trim();
       const date  = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
 
-      // collect all entry rows
-      const payload = Array.from(document.querySelectorAll('.entry-row'))
-        .map(r => ({
-          exercise_id: r.querySelector('.exercise_id').value,
-          sets:        parseInt(r.querySelector('.sets').value, 10),
-          reps:        parseInt(r.querySelector('.reps').value, 10),
-          weight:      parseFloat(r.querySelector('.weight').value) || 0
-        }));
+      const payload = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
+        exercise_id: r.querySelector('.exercise_id').value,
+        sets:        parseInt(r.querySelector('.sets').value, 10),
+        reps:        parseInt(r.querySelector('.reps').value, 10),
+        weight:      parseFloat(r.querySelector('.weight').value) || 0
+      }));
+      if (!payload.length) return showStatus('Add at least one exercise!', 'red');
 
-      if (!payload.length) {
-        return showStatus('Add at least one exercise!', 'red');
-      }
-
-      // a) INSERT workout
       const { data: workout, error: wErr } = await supabase
         .from('workouts')
         .insert([{ user_id, date, type, notes }])
@@ -130,21 +213,17 @@
         .single();
       if (wErr) return showStatus('Failed to save workout.', 'red');
 
-      // b) BULK INSERT entries into workout_intries
       const entries = payload.map(e => ({
-        workout_id:   workout.id,
-        exercise_id:  e.exercise_id,
-        sets:         e.sets,
-        reps:         e.reps,
-        weight:       e.weight
+        workout_id:  workout.id,
+        exercise_id: e.exercise_id,
+        sets:        e.sets,
+        reps:        e.reps,
+        weight:      e.weight
       }));
-      const { error: eErr } = await supabase
-        .from('workout_intries')
-        .insert(entries);
+      const { error: eErr } = await supabase.from('workout_intries').insert(entries);
       if (eErr) return showStatus('Failed to save exercises.', 'red');
 
       showStatus('Workout logged! 🎉', 'lightgreen');
-      // optionally clear form or redirect…
     };
 
     function showStatus(msg, color) {
