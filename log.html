@@ -50,7 +50,9 @@
       margin-top: 1rem;
       font-weight: 600;
     }
-    form input, form select, form textarea {
+    form input,
+    form select,
+    form textarea {
       width: 100%;
       padding: 0.75rem;
       margin-top: 0.25rem;
@@ -122,7 +124,7 @@
       <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
 
       <div id="entries">
-        <!-- exercise-entry rows will be injected here -->
+        <!-- exercise rows injected here -->
       </div>
 
       <button type="button" id="addEntry">+ Add Exercise</button>
@@ -133,7 +135,6 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
@@ -141,24 +142,32 @@
 
     let userId, exercises = [];
 
-    async function init() {
-      // 1) restore session & grab user
-      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
-      if (sessErr || !session) {
+    // Only initialize once auth state is known
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
         return window.location.replace('login.html');
       }
       userId = session.user.id;
+      startApp();
+    });
 
-      // 2) load master exercise list
-      const { data, error: exErr } = await supabase
+    async function startApp() {
+      // load exercises master list
+      const { data, error } = await supabase
         .from('exercises')
         .select('id, exercise_name');
-      if (exErr) console.error(exErr);
-      else exercises = data;
+      if (error) {
+        console.error(error);
+        return showStatus('Could not load exercises', 'red');
+      }
+      exercises = data;
 
-      // 3) default date + first row
+      // default date + first entry row
       document.getElementById('date').valueAsDate = new Date();
       addEntryRow();
+
+      document.getElementById('addEntry').onclick = addEntryRow;
+      document.getElementById('logForm').onsubmit = handleSubmit;
     }
 
     function addEntryRow() {
@@ -166,60 +175,4 @@
       row.className = 'entry-row';
       row.innerHTML = `
         <select class="exercise_id" required>
-          <option value="">— choose exercise —</option>
-          ${exercises.map(e => `<option value="${e.id}">${e.exercise_name}</option>`).join('')}
-        </select>
-        <input type="number" class="sets" placeholder="Sets" min="1" required />
-        <input type="number" class="reps" placeholder="Reps" min="1" required />
-        <input type="number" class="weight" placeholder="Weight" min="0" step="0.1" />
-        <button type="button" class="remove-entry">&times;</button>
-      `;
-      row.querySelector('.remove-entry').onclick = () => row.remove();
-      document.getElementById('entries').append(row);
-    }
-    document.getElementById('addEntry').onclick = addEntryRow;
-
-    document.getElementById('logForm').onsubmit = async e => {
-      e.preventDefault();
-      const type  = document.getElementById('type').value.trim();
-      const date  = document.getElementById('date').value;
-      const notes = document.getElementById('notes').value.trim();
-
-      const payload = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
-        exercise_id: r.querySelector('.exercise_id').value,
-        sets:        parseInt(r.querySelector('.sets').value, 10),
-        reps:        parseInt(r.querySelector('.reps').value, 10),
-        weight:      parseFloat(r.querySelector('.weight').value) || 0
-      }));
-      if (!payload.length) return showStatus('Add at least one exercise!', 'red');
-
-      const { data: workout, error: wErr } = await supabase
-        .from('workouts')
-        .insert([{ user_id, date, type, notes }])
-        .select()
-        .single();
-      if (wErr) return showStatus('Failed to save workout.', 'red');
-
-      const entries = payload.map(e => ({
-        workout_id:  workout.id,
-        exercise_id: e.exercise_id,
-        sets:        e.sets,
-        reps:        e.reps,
-        weight:      e.weight
-      }));
-      const { error: eErr } = await supabase.from('workout_intries').insert(entries);
-      if (eErr) return showStatus('Failed to save exercises.', 'red');
-
-      showStatus('Workout logged! 🎉', 'lightgreen');
-    };
-
-    function showStatus(msg, color) {
-      const st = document.getElementById('status');
-      st.textContent = msg;
-      st.style.color   = color;
-    }
-
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
-</body>
-</html>
+          <
