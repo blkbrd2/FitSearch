@@ -121,7 +121,7 @@
       <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
 
       <div id="entries">
-        <!-- injected rows -->
+        <!-- dynamically injected rows -->
       </div>
 
       <button type="button" id="addEntry">+ Add Exercise</button>
@@ -132,38 +132,43 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
 
-    let userId, exercises = [];
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1) Restore session & redirect if absent
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr || !session) return window.location.replace('login.html');
+      const userId = session.user.id;
 
-    async function init() {
-      const { data:{ session }, error } = await supabase.auth.getSession();
-      if (error || !session) return window.location.replace('login.html');
-      userId = session.user.id;
-
-      const { data, error: exErr } = await supabase
+      // 2) Load master list of exercises
+      let { data: exercises, error: exErr } = await supabase
         .from('exercises')
         .select('id, exercise_name');
-      if (exErr) console.error(exErr);
-      else exercises = data;
+      if (exErr) {
+        console.error(exErr);
+        return showStatus('Could not load exercises', 'red');
+      }
 
+      // 3) Set default date + bind UI
       document.getElementById('date').valueAsDate = new Date();
-      addEntryRow();
+      document.getElementById('addEntry').addEventListener('click', () => addEntryRow(exercises));
+      document.getElementById('logForm').addEventListener('submit', e => handleSubmit(e, userId));
 
-      document.getElementById('addEntry').addEventListener('click', addEntryRow);
-      document.getElementById('logForm').addEventListener('submit', handleSubmit);
-    }
+      // 4) Kick off with one entry row
+      addEntryRow(exercises);
+    });
 
-    function addEntryRow() {
+    function addEntryRow(exercises) {
       const row = document.createElement('div');
       row.className = 'entry-row';
       row.innerHTML = `
         <select class="exercise_id" required>
           <option value="">— choose exercise —</option>
-          ${exercises.map(e => `<option value="${e.id}">${e.exercise_name}</option>`).join("")}
+          ${exercises.map(e => `<option value="${e.id}">${e.exercise_name}</option>`).join('')}
         </select>
         <input type="number" class="sets" placeholder="Sets" min="1" required />
         <input type="number" class="reps" placeholder="Reps" min="1" required />
@@ -174,37 +179,40 @@
       document.getElementById('entries').append(row);
     }
 
-    async function handleSubmit(e) {
+    async function handleSubmit(e, userId) {
       e.preventDefault();
+
+      // Gather form values
       const type  = document.getElementById('type').value.trim();
       const date  = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
 
+      // Gather entry rows
       const rows = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
         exercise_id: r.querySelector('.exercise_id').value,
         sets:        parseInt(r.querySelector('.sets').value, 10),
         reps:        parseInt(r.querySelector('.reps').value, 10),
         weight:      parseFloat(r.querySelector('.weight').value) || 0
-      }));
+      })).filter(r => r.exercise_id);
+
       if (!rows.length) {
-        showStatus('Add at least one exercise!', 'red');
-        return;
+        return showStatus('Add at least one exercise!', 'red');
       }
 
-      // INSERT workout & RETURN the new row
-      const { data: workoutArr, error: wErr } = await supabase
+      // 5) INSERT workout & get back the new id
+      let { data: workoutArr, error: wErr } = await supabase
         .from('workouts')
         .insert(
           [{ user_id: userId, date, type, notes }],
           { returning: 'representation' }
         );
-      if (wErr) {
-        showStatus('Failed to save workout.', 'red');
-        return;
+      if (wErr || !workoutArr?.length) {
+        console.error(wErr);
+        return showStatus('Failed to save workout.', 'red');
       }
       const workout = workoutArr[0];
 
-      // INSERT child entries
+      // 6) INSERT the entries referencing that id
       const childRows = rows.map(r => ({
         workout_id:  workout.id,
         exercise_id: r.exercise_id,
@@ -216,8 +224,8 @@
         .from('workout_entries')
         .insert(childRows);
       if (eErr) {
-        showStatus('Failed to save exercises.', 'red');
-        return;
+        console.error(eErr);
+        return showStatus('Failed to save exercises.', 'red');
       }
 
       showStatus('Workout logged! 🎉', 'lightgreen');
@@ -226,10 +234,8 @@
     function showStatus(msg, color) {
       const st = document.getElementById('status');
       st.textContent = msg;
-      st.style.color = color;
+      st.style.color   = color;
     }
-
-    document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
