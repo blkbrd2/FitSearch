@@ -22,7 +22,6 @@
       background: #292946;
       display: flex;
       justify-content: space-around;
-      align-items: center;
       padding: 0.75rem 1rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
@@ -47,8 +46,8 @@
       margin-top: 1rem;
       font-weight: 600;
     }
-    form input,
     form select,
+    form input,
     form textarea {
       width: 100%;
       padding: 0.75rem;
@@ -111,8 +110,15 @@
   <main>
     <h2>Log a New Workout</h2>
     <form id="logForm">
-      <label for="type">Session Name / Type</label>
-      <input type="text" id="type" placeholder="e.g. Leg Day" required />
+      <label for="type">Workout Type</label>
+      <select id="type" required>
+        <option value="">— Select type —</option>
+        <option value="Push">Push</option>
+        <option value="Pull">Pull</option>
+        <option value="Legs">Legs</option>
+        <option value="Core">Core</option>
+        <option value="Full Body">Full Body</option>
+      </select>
 
       <label for="date">Date</label>
       <input type="date" id="date" required />
@@ -121,7 +127,7 @@
       <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
 
       <div id="entries">
-        <!-- dynamically injected rows -->
+        <!-- exercise rows injected here -->
       </div>
 
       <button type="button" id="addEntry">+ Add Exercise</button>
@@ -132,33 +138,29 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1) Restore session & redirect if absent
-      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
-      if (sessErr || !session) return window.location.replace('login.html');
+      // Restore session or redirect
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) return window.location.replace('login.html');
       const userId = session.user.id;
 
-      // 2) Load master list of exercises
-      let { data: exercises, error: exErr } = await supabase
+      // Fetch master list of exercises
+      const { data: exercises, error: exErr } = await supabase
         .from('exercises')
         .select('id, exercise_name');
-      if (exErr) {
-        console.error(exErr);
-        return showStatus('Could not load exercises', 'red');
-      }
+      if (exErr) return showStatus('Could not load exercises', 'red');
 
-      // 3) Set default date + bind UI
+      // Default date & bind handlers
       document.getElementById('date').valueAsDate = new Date();
       document.getElementById('addEntry').addEventListener('click', () => addEntryRow(exercises));
       document.getElementById('logForm').addEventListener('submit', e => handleSubmit(e, userId));
 
-      // 4) Kick off with one entry row
+      // Kick off with one row
       addEntryRow(exercises);
     });
 
@@ -182,12 +184,11 @@
     async function handleSubmit(e, userId) {
       e.preventDefault();
 
-      // Gather form values
-      const type  = document.getElementById('type').value.trim();
+      const type  = document.getElementById('type').value;
       const date  = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
 
-      // Gather entry rows
+      // Gather each exercise row
       const rows = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
         exercise_id: r.querySelector('.exercise_id').value,
         sets:        parseInt(r.querySelector('.sets').value, 10),
@@ -195,12 +196,10 @@
         weight:      parseFloat(r.querySelector('.weight').value) || 0
       })).filter(r => r.exercise_id);
 
-      if (!rows.length) {
-        return showStatus('Add at least one exercise!', 'red');
-      }
+      if (!rows.length) return showStatus('Add at least one exercise!', 'red');
 
-      // 5) INSERT workout & get back the new id
-      let { data: workoutArr, error: wErr } = await supabase
+      // Insert parent workout, no .select() here
+      const { data: workoutArr, error: wErr } = await supabase
         .from('workouts')
         .insert(
           [{ user_id: userId, date, type, notes }],
@@ -212,7 +211,7 @@
       }
       const workout = workoutArr[0];
 
-      // 6) INSERT the entries referencing that id
+      // Bulk insert entries
       const childRows = rows.map(r => ({
         workout_id:  workout.id,
         exercise_id: r.exercise_id,
