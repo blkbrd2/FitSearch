@@ -214,27 +214,4 @@
       // Bulk insert entries
       const childRows = rows.map(r => ({
         workout_id:  workout.id,
-        exercise_id: r.exercise_id,
-        sets:        r.sets,
-        reps:        r.reps,
-        weight:      r.weight
-      }));
-      const { error: eErr } = await supabase
-        .from('workout_entries')
-        .insert(childRows);
-      if (eErr) {
-        console.error(eErr);
-        return showStatus('Failed to save exercises.', 'red');
-      }
-
-      showStatus('Workout logged! 🎉', 'lightgreen');
-    }
-
-    function showStatus(msg, color) {
-      const st = document.getElementById('status');
-      st.textContent = msg;
-      st.style.color   = color;
-    }
-  </script>
-</body>
-</html>
+        exercise_id: r.ex....
