@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>FreeFit – Log Workout</title>
+  <title>FreeFit – Log Workout</n  ></title>
   <style>
     /* ===== Global Dark Theme ===== */
     body {
@@ -110,7 +110,7 @@
   <main>
     <h2>Log a New Workout</h2>
     <form id="logForm">
-      <label for="type">Workout Type</label>
+      <label for="type">Workout Type</n  ></label>
       <select id="type" required>
         <option value="">— Select type —</option>
         <option value="Push">Push</option>
@@ -143,28 +143,37 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Restore session or redirect
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) return window.location.replace('login.html');
-      const userId = session.user.id;
+    let exercises = [];
+    let userId = null;
 
-      // Fetch master list of exercises
-      const { data: exercises, error: exErr } = await supabase
+    document.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+      // restore session
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr || !session) return window.location.replace('login.html');
+      userId = session.user.id;
+
+      // fetch exercises
+      const { data, error: exErr } = await supabase
         .from('exercises')
         .select('id, exercise_name');
-      if (exErr) return showStatus('Could not load exercises', 'red');
+      if (exErr) return showStatus('Failed to load exercises', 'red');
+      exercises = data;
 
-      // Default date & bind handlers
+      // default date
       document.getElementById('date').valueAsDate = new Date();
-      document.getElementById('addEntry').addEventListener('click', () => addEntryRow(exercises));
-      document.getElementById('logForm').addEventListener('submit', e => handleSubmit(e, userId));
 
-      // Kick off with one row
-      addEntryRow(exercises);
-    });
+      // bind events
+      document.getElementById('addEntry').addEventListener('click', addEntryRow);
+      document.getElementById('logForm').addEventListener('submit', handleSubmit);
 
-    function addEntryRow(exercises) {
+      // initial row
+      addEntryRow();
+    }
+
+    function addEntryRow() {
+      const container = document.getElementById('entries');
       const row = document.createElement('div');
       row.className = 'entry-row';
       row.innerHTML = `
@@ -177,41 +186,52 @@
         <input type="number" class="weight" placeholder="Weight" min="0" step="0.1" />
         <button type="button" class="remove-entry">&times;</button>
       `;
-      row.querySelector('.remove-entry').onclick = () => row.remove();
-      document.getElementById('entries').append(row);
+      row.querySelector('.remove-entry').addEventListener('click', () => row.remove());
+      container.appendChild(row);
     }
 
-    async function handleSubmit(e, userId) {
+    async function handleSubmit(e) {
       e.preventDefault();
-
       const type  = document.getElementById('type').value;
       const date  = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
 
-      // Gather each exercise row
+      // collect rows
       const rows = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
         exercise_id: r.querySelector('.exercise_id').value,
-        sets:        parseInt(r.querySelector('.sets').value, 10),
-        reps:        parseInt(r.querySelector('.reps').value, 10),
-        weight:      parseFloat(r.querySelector('.weight').value) || 0
+        sets: parseInt(r.querySelector('.sets').value, 10),
+        reps: parseInt(r.querySelector('.reps').value, 10),
+        weight: parseFloat(r.querySelector('.weight').value) || 0
       })).filter(r => r.exercise_id);
 
       if (!rows.length) return showStatus('Add at least one exercise!', 'red');
 
-      // Insert parent workout, no .select() here
+      // insert parent
       const { data: workoutArr, error: wErr } = await supabase
         .from('workouts')
-        .insert(
-          [{ user_id: userId, date, type, notes }],
-          { returning: 'representation' }
-        );
-      if (wErr || !workoutArr?.length) {
-        console.error(wErr);
-        return showStatus('Failed to save workout.', 'red');
-      }
+        .insert([{ user_id: userId, date, type, notes }], { returning: 'representation' });
+      if (wErr || !workoutArr?.length) return showStatus('Failed to save workout.', 'red');
       const workout = workoutArr[0];
 
-      // Bulk insert entries
-      const childRows = rows.map(r => ({
-        workout_id:  workout.id,
-        exercise_id: r.ex....
+      // insert entries
+      const child = rows.map(r => ({
+        workout_id: workout.id,
+        exercise_id: r.exercise_id,
+        sets: r.sets,
+        reps: r.reps,
+        weight: r.weight
+      }));
+      const { error: eErr } = await supabase.from('workout_entries').insert(child);
+      if (eErr) return showStatus('Failed to save exercises.', 'red');
+
+      showStatus('Workout logged! 🎉', 'lightgreen');
+    }
+
+    function showStatus(msg, color) {
+      const st = document.getElementById('status');
+      st.textContent = msg;
+      st.style.color = color;
+    }
+  </script>
+</body>
+</html>
