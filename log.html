@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>FreeFit – Log Workout</n  ></title>
+  <title>FreeFit – Log Workout</title>
   <style>
     /* ===== Global Dark Theme ===== */
     body {
@@ -110,7 +110,7 @@
   <main>
     <h2>Log a New Workout</h2>
     <form id="logForm">
-      <label for="type">Workout Type</n  ></label>
+      <label for="type">Workout Type</label>
       <select id="type" required>
         <option value="">— Select type —</option>
         <option value="Push">Push</option>
@@ -126,10 +126,7 @@
       <label for="notes">Session Notes</label>
       <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
 
-      <div id="entries">
-        <!-- exercise rows injected here -->
-      </div>
-
+      <div id="entries"></div>
       <button type="button" id="addEntry">+ Add Exercise</button>
       <button type="submit" id="saveWorkout">Save Workout</button>
       <p id="status"></p>
@@ -158,12 +155,15 @@
       const { data, error: exErr } = await supabase
         .from('exercises')
         .select('id, exercise_name');
-      if (exErr) return showStatus('Failed to load exercises', 'red');
+      if (exErr) {
+        console.error('Error loading exercises:', exErr);
+        return showStatus('Failed to load exercises', 'red');
+      }
       exercises = data;
 
       // default date
       document.getElementById('date').valueAsDate = new Date();
-
+      
       // bind events
       document.getElementById('addEntry').addEventListener('click', addEntryRow);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
@@ -204,14 +204,33 @@
         weight: parseFloat(r.querySelector('.weight').value) || 0
       })).filter(r => r.exercise_id);
 
-      if (!rows.length) return showStatus('Add at least one exercise!', 'red');
+      if (!rows.length) {
+        return showStatus('Add at least one exercise!', 'red');
+      }
 
-      // insert parent
-      const { data: workoutArr, error: wErr } = await supabase
+      // insert workout without returning
+      const { error: wErr } = await supabase
         .from('workouts')
-        .insert([{ user_id: userId, date, type, notes }], { returning: 'representation' });
-      if (wErr || !workoutArr?.length) return showStatus('Failed to save workout.', 'red');
-      const workout = workoutArr[0];
+        .insert([{ user_id, date, type, notes }]);
+      if (wErr) {
+        console.error('Insert workout error:', wErr);
+        return showStatus('Failed to save workout.', 'red');
+      }
+
+      // fetch the just-inserted workout id
+      const { data: workout, error: selErr } = await supabase
+        .from('workouts')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('date', date)
+        .eq('type', type)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (selErr) {
+        console.error('Fetch workout id error:', selErr);
+        return showStatus('Could not retrieve workout ID.', 'red');
+      }
 
       // insert entries
       const child = rows.map(r => ({
@@ -222,7 +241,10 @@
         weight: r.weight
       }));
       const { error: eErr } = await supabase.from('workout_entries').insert(child);
-      if (eErr) return showStatus('Failed to save exercises.', 'red');
+      if (eErr) {
+        console.error('Insert entries error:', eErr);
+        return showStatus('Failed to save exercises.', 'red');
+      }
 
       showStatus('Workout logged! 🎉', 'lightgreen');
     }
