@@ -211,7 +211,7 @@
       // insert workout without returning
       const { error: wErr } = await supabase
         .from('workouts')
-        .insert([{ user_id, date, type, notes }]);
+        .insert([{ user_id: userId, date, type, notes }]);
       if (wErr) {
         console.error('Insert workout error:', wErr);
         return showStatus('Failed to save workout.', 'red');
