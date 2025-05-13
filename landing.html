@@ -2,269 +2,165 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeFit – My Workouts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FreeFit • Home</title>
+  <!-- Google Font: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* ===== Global Dark Theme ===== */
+    :root {
+      --bg: #1e1e2f;              /* Deep gray background */
+      --text: #ffffff;
+      --accent1: #ADD8E6;         /* Light sky blue */
+      --accent2: #FF7F50;         /* Coral */
+      --nav-bg: #14141f;
+      --nav-text: #ffffff;
+      --nav-hover: var(--accent1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #1e1e2f;
-      color: #fff;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
     }
-    a { color: inherit; text-decoration: none; }
-
-    /* ===== Navbar ===== */
     nav {
-      background: #292946;
+      background: var(--nav-bg);
+      padding: 1rem;
+    }
+    nav ul {
+      list-style: none;
       display: flex;
-      justify-content: space-around;
-      padding: 0.75rem 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      justify-content: center;
+      gap: 2rem;
     }
     nav a {
-      font-weight: bold;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      transition: background 0.2s;
+      color: var(--nav-text);
+      text-decoration: none;
+      font-weight: 600;
+      position: relative;
+      padding: 0.25rem 0.5rem;
     }
-    nav a:hover { background: #3a3a5a; }
-    nav a.active { background: #ffb347; color: #1e1e2f; }
-
-    /* ===== Page Content ===== */
+    nav a:hover {
+      color: var(--nav-hover);
+    }
+    nav a.active::after {
+      content: '';
+      position: absolute;
+      bottom: -0.25rem;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--accent2);  /* Coral underline for active */
+      border-radius: 2px;
+    }
     main {
       flex: 1;
-      max-width: 800px;
-      margin: 2rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .welcome-card {
+      background: #2a2a3d;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      max-width: 400px;
       width: 100%;
     }
-    h2 {
-      color: #ffb347;
-      margin-top: 0;
-      text-align: center;
+    .welcome-card img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      border: 2px solid var(--accent1);
+    }
+    .welcome-card h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      color: var(--accent1);
+    }
+    .welcome-card p {
+      margin-bottom: 1.5rem;
+      color: #ccc;
     }
     .btn {
       display: inline-block;
-      margin: 0.5rem 0;
-      padding: 0.5rem 1rem;
-      background: #ffb347;
-      color: #1e1e2f;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
+      background: var(--accent2);
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s;
     }
-
-    /* ===== List View ===== */
-    #listContainer table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
+    .btn:hover {
+      background: #e76b45;
     }
-    #listContainer th,
-    #listContainer td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #444;
-      text-align: left;
-    }
-    #listContainer th {
-      background: #2c2c3c;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    #listContainer tbody tr:hover { background: #3a3a5a; }
-    .empty {
-      text-align: center;
-      color: #aaa;
-      margin-top: 2rem;
-    }
-
-    /* ===== Detail View ===== */
-    #detailContainer { display: none; }
-    #detailContainer .field {
-      margin: 1rem 0;
-    }
-    #detailContainer table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    #detailContainer th,
-    #detailContainer td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #444;
-      text-align: left;
-    }
-    #detailContainer th { background: #2c2c3c; }
   </style>
 </head>
 <body>
-  <!-- NAVBAR -->
+  <!-- Top navigation -->
   <nav>
-    <a href="landing.html">🏠 Home</a>
-    <a href="profile.html">👤 Profile</a>
-    <a href="workouts.html" class="active">💪 Workouts</a>
-    <a href="log.html">📝 Log Entry</a>
-    <a href="metrics.html">📊 Metrics</a>
+    <ul>
+      <li><a href="landing.html" class="active">Home</a></li>
+      <li><a href="profile.html">Profile</a></li>
+      <li><a href="workouts.html">Workouts</a></li>
+      <li><a href="log.html">Log Entry</a></li>
+      <li><a href="metrics.html">Metrics</a></li>
+    </ul>
   </nav>
 
+  <!-- Main landing content -->
   <main>
-    <h2 id="pageTitle">My Workouts</h2>
-    <button class="btn" id="newWorkout">+ New Workout</button>
-
-    <!-- List View -->
-    <div id="listContainer">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Notes</th>
-            <th># Exercises</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="workoutList"></tbody>
-      </table>
-      <div class="empty" id="emptyMessage">Loading workouts…</div>
-    </div>
-
-    <!-- Detail View -->
-    <div id="detailContainer">
-      <button class="btn" id="backToList">← Back</button>
-      <h2>Workout Details</h2>
-      <div class="field"><strong>Date:</strong> <span id="detailDate"></span></div>
-      <div class="field"><strong>Type:</strong> <span id="detailType"></span></div>
-      <div class="field"><strong>Notes:</strong> <span id="detailNotes"></span></div>
-
-      <h3>Exercises</h3>
-      <table>
-        <thead>
-          <tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight</th></tr>
-        </thead>
-        <tbody id="entriesList"></tbody>
-      </table>
-      <div class="empty" id="emptyDetail">Loading...</div>
+    <div class="welcome-card">
+      <img id="profile-image" src="" alt="Profile Image" />
+      <h1>Welcome, <span id="first-name">Friend</span>!</h1>
+      <p>Here's your snapshot for today. Ready to crush a workout?</p>
+      <a href="workouts.html" class="btn">View Workouts</a>
     </div>
   </main>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-    const supabase = createClient(
-      'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
-    );
-
-    let exercises = [];
-
-    document.getElementById('newWorkout').addEventListener('click', () => {
-      window.location.href = 'log.html';
-    });
-    document.getElementById('backToList').addEventListener('click', () => {
-      window.location.href = 'workouts.html';
-    });
+  <script>
+    // Initialize Supabase client with your project's URL & anon key
+    const SUPABASE_URL = 'https://mgskqqwxvnxyasuksxvp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return window.location.replace('login.html');
-      const userId = session.user.id;
-
-      // load master exercises
-      const { data, error: exErr } = await supabase.from('exercises').select('id, exercise_name');
-      exercises = data || [];
-
-      const params = new URLSearchParams(window.location.search);
-      const viewId = params.get('view');
-      if (viewId) {
-        document.getElementById('pageTitle').textContent = 'Workout Details';
-        document.getElementById('newWorkout').style.display = 'none';
-        document.getElementById('listContainer').style.display = 'none';
-        document.getElementById('detailContainer').style.display = 'block';
-        return showWorkoutDetail(viewId);
+      // Ensure user is signed in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
       }
 
-      // otherwise list
-      loadWorkoutList(userId);
-    });
+      // Fetch profile info
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('first_name, profile_image_url')
+        .eq('user_id', user.id)
+        .single();
 
-    async function loadWorkoutList(userId) {
-      const { data, error } = await supabase
-        .from('workouts')
-        .select('id, date, type, notes, workout_entries(id)')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
-      const listEl = document.getElementById('workoutList');
-      const emptyMsg = document.getElementById('emptyMessage');
-      listEl.innerHTML = '';
       if (error) {
-        console.error(error);
-        emptyMsg.textContent = 'Failed to load workouts.';
-        return;
-      }
-      if (!data.length) {
-        emptyMsg.textContent = 'No workouts yet.';
-        return;
-      }
-      emptyMsg.style.display = 'none';
-      data.forEach(w => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${new Date(w.date).toLocaleDateString()}</td>
-          <td>${w.type.charAt(0).toUpperCase()+w.type.slice(1)}</td>
-          <td>${w.notes || ''}</td>
-          <td>${w.workout_entries.length}</td>
-          <td><button class="btn" data-id="${w.id}">View</button></td>
-        `;
-        tr.querySelector('button').addEventListener('click', () => {
-          window.location.href = `workouts.html?view=${w.id}`;
-        });
-        listEl.appendChild(tr);
-      });
-    }
-
-    async function showWorkoutDetail(id) {
-      const detailEmpty = document.getElementById('emptyDetail');
-      detailEmpty.textContent = 'Loading...';
-
-      const [{ data: workout, error: wErr }, { data: entries, error: eErr }] = await Promise.all([
-        supabase.from('workouts').select('date, type, notes').eq('id', id).single(),
-        supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
-      ]);
-      if (wErr || eErr) {
-        console.error(wErr || eErr);
-        detailEmpty.textContent = 'Failed to load details.';
+        console.error('Profile load error:', error);
         return;
       }
 
-      document.getElementById('detailDate').textContent = new Date(workout.date).toLocaleDateString();
-      document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase()+workout.type.slice(1);
-      document.getElementById('detailNotes').textContent = workout.notes || '';
-
-      const entriesEl = document.getElementById('entriesList');
-      entriesEl.innerHTML = '';
-      if (!entries.length) {
-        detailEmpty.textContent = 'No exercises recorded.';
-        return;
+      // Populate welcome card
+      document.getElementById('first-name').textContent = profile.first_name;
+      if (profile.profile_image_url) {
+        document.getElementById('profile-image').src = profile.profile_image_url;
+      } else {
+        // Fallback avatar
+        document.getElementById('profile-image').src = 'default-avatar.png';
       }
-      detailEmpty.style.display = 'none';
-
-      entries.forEach(r => {
-        const exercise = exercises.find(e => e.id === r.exercise_id);
-        const name = exercise ? exercise.exercise_name : r.exercise_id;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${name}</td>
-          <td>${r.sets}</td>
-          <td>${r.reps}</td>
-          <td>${r.weight}</td>
-        `;
-        entriesEl.appendChild(tr);
-      });
-    }
+    });
   </script>
 </body>
 </html>
