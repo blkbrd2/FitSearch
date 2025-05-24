@@ -5,38 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeFit – Welcome</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/lucide.min.js"></script>
 </head>
 <body>
-  <!-- NAVIGATION -->
-  <nav>
-    <a href="landing.html" class="active"><i class="lucide lucide-home"></i><span>Home</span></a>
-    <a href="profile.html"><i class="lucide lucide-user"></i><span>Profile</span></a>
-    <a href="workouts.html"><i class="lucide lucide-dumbbell"></i><span>Workouts</span></a>
-    <a href="log.html"><i class="lucide lucide-edit"></i><span>Log Entry</span></a>
-    <a href="metrics.html"><i class="lucide lucide-bar-chart"></i><span>Metrics</span></a>
-  </nav>
+  <div class="container">
 
-  <!-- HERO SECTION -->
-  <div class="hero card">
-    <h1>Welcome to FreeFit</h1>
-    <p>
-      Track your workouts, monitor your progress, and celebrate every milestone.
-      Get started by logging a new session or browsing your past workouts.
-    </p>
-    <div>
+    <!-- Welcome Card -->
+    <div class="card">
+      <h1>Welcome to FreeFit</h1>
       <button class="primary-btn" id="toLog">Log Workout</button>
       <button class="secondary-btn" id="toWorkouts">View Workouts</button>
+      <div class="legal">Track your progress and crush your goals!</div>
     </div>
-  </div>
 
-  <!-- SUMMARY -->
-  <div id="summary" class="legal">
-    You have completed <span id="workoutCount">0</span> workouts!
-  </div>
+    <!-- Workout Summary Card -->
+    <div class="card">
+      <div class="search-bar">
+        <input type="text" placeholder="Search workouts..." />
+      </div>
+      <div class="tabs">
+        <div class="tab active">All</div>
+        <div class="tab">Recent</div>
+      </div>
+      <div class="task-list">
+        <div class="task">
+          <div class="checkbox"></div>
+          <div class="label">Chest + Triceps</div>
+        </div>
+        <div class="task">
+          <div class="checkbox"></div>
+          <div class="label">Back + Biceps</div>
+        </div>
+        <div class="task">
+          <div class="checkbox"></div>
+          <div class="label">Leg Day</div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <i data-lucide="home"></i>
+        <i data-lucide="plus-circle"></i>
+        <i data-lucide="bar-chart-2"></i>
+      </div>
+    </div>
 
-  <!-- FOOTER -->
-  <footer class="legal">&copy; 2025 FreeFit. All rights reserved.</footer>
+  </div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -52,7 +64,9 @@
       window.location.href = 'workouts.html';
     });
 
-    async function loadCount() {
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       const userId = session.user.id;
@@ -61,11 +75,10 @@
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId);
       if (!error) {
-        document.getElementById('workoutCount').textContent = count;
+        const summary = document.querySelector(".legal");
+        summary.innerHTML = `You have completed <strong>${count}</strong> workouts!`;
       }
-    }
-
-    document.addEventListener('DOMContentLoaded', loadCount);
+    });
   </script>
 </body>
 </html>
