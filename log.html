@@ -1,138 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeFit – Log Workout</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
-    /* ===== Global Dark Theme ===== */
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #1e1e2f;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    a { color: inherit; text-decoration: none; }
-
-    /* ===== Navbar ===== */
-    nav {
-      background: #292946;
-      display: flex;
-      justify-content: space-around;
-      padding: 0.75rem 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    nav a {
-      font-weight: bold;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      transition: background 0.2s;
-    }
-    nav a:hover { background: #3a3a5a; }
-    nav a.active { background: #ffb347; color: #1e1e2f; }
-
-    /* ===== Page Content ===== */
-    main {
-      flex: 1;
-      max-width: 600px;
-      margin: 2rem auto;
-    }
-    h2 { color: #ffb347; margin-top: 0; }
-    form label {
-      display: block;
-      margin-top: 1rem;
-      font-weight: 600;
-    }
-    form select,
-    form input,
-    form textarea {
-      width: 100%;
-      padding: 0.75rem;
-      margin-top: 0.25rem;
-      border: none;
-      border-radius: 6px;
-      background: #2c2c3c;
-      color: #fff;
-      font-size: 1rem;
-    }
-
-    /* ===== Exercise Rows ===== */
+    /* Page-specific styles */
     #entries {
-      margin-top: 1rem;
-      border-top: 1px solid #444;
-      padding-top: 1rem;
+      margin-top: var(--space-md);
+      border-top: 1px solid var(--color-border);
+      padding-top: var(--space-md);
     }
     .entry-row {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr auto;
-      gap: 0.5rem;
+      gap: var(--space-xs);
       align-items: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: var(--space-sm);
     }
     .remove-entry {
       background: none;
       border: none;
-      color: #ff6b6b;
+      color: var(--color-accent-alt);
       font-size: 1.25rem;
       cursor: pointer;
       line-height: 1;
     }
-
-    /* ===== Buttons & Status ===== */
-    #addEntry,
-    #saveWorkout {
-      margin-top: 1rem;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    .field label {
+      font-weight: bold;
+      margin-top: var(--space-md);
+      display: block;
     }
-    #addEntry { background: #4477ff; color: #fff; }
-    #saveWorkout { background: #ffb347; color: #1e1e2f; }
-    #status { margin-top: 1rem; font-weight: bold; }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: var(--space-sm);
+      margin-top: var(--space-xs);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
   </style>
 </head>
 <body>
-  <!-- NAVBAR -->
+  <!-- Navbar -->
   <nav>
-    <a href="landing.html">🏠 Home</a>
-    <a href="profile.html">👤 Profile</a>
-    <a href="workouts.html">💪 Workouts</a>
-    <a href="log.html" class="active">📝 Log Entry</a>
-    <a href="metrics.html">📊 Metrics</a>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="log.html" class="active"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
   </nav>
 
-  <!-- PAGE CONTENT -->
-  <main>
-    <h2>Log a New Workout</h2>
-    <form id="logForm">
-      <label for="type">Workout Type</label>
-      <select id="type" required>
-        <option value="">— Select type —</option>
-        <option value="push">Push</option>
-        <option value="pull">Pull</option>
-        <option value="legs">Legs</option>
-        <option value="core">Core</option>
-        <option value="full body">Full Body</option>
-        <option value="cardio">Cardio</option>
-        <option value="rest">Rest</option>
-      </select>
+  <!-- Main Content -->
+  <main class="container">
+    <div class="card" style="max-width: 600px;">
+      <h2 style="margin-bottom: var(--space-md);">Log a New Workout</h2>
+      <form id="logForm" style="display: flex; flex-direction: column; gap: var(--space-md);">
+        <div class="field">
+          <label for="type">Workout Type</label>
+          <select id="type" required>
+            <option value="">— Select type —</option>
+            <option value="push">Push</option>
+            <option value="pull">Pull</option>
+            <option value="legs">Legs</option>
+            <option value="core">Core</option>
+            <option value="full body">Full Body</option>
+            <option value="cardio">Cardio</option>
+            <option value="rest">Rest</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input type="date" id="date" required />
+        </div>
+        <div class="field">
+          <label for="notes">Session Notes</label>
+          <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
+        </div>
 
-      <label for="date">Date</label>
-      <input type="date" id="date" required />
-
-      <label for="notes">Session Notes</label>
-      <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
-
-      <div id="entries"></div>
-      <button type="button" id="addEntry">+ Add Exercise</button>
-      <button type="submit" id="saveWorkout">Save Workout</button>
-      <p id="status"></p>
-    </form>
+        <div id="entries"></div>
+        <button type="button" class="secondary-btn" id="addEntry">+ Add Exercise</button>
+        <button type="submit" class="primary-btn" id="saveWorkout">Save Workout</button>
+        <p id="status"></p>
+      </form>
+    </div>
   </main>
 
   <script type="module">
@@ -148,30 +105,25 @@
     document.addEventListener('DOMContentLoaded', init);
 
     async function init() {
-      // restore session
-      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
-      if (sessErr || !session) return window.location.replace('login.html');
+      // Auth check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return window.location.replace('login.html');
       userId = session.user.id;
 
-      // fetch exercises
-      const { data, error: exErr } = await supabase
-        .from('exercises')
-        .select('id, exercise_name');
-      if (exErr) {
-        console.error('Error loading exercises:', exErr);
-        return showStatus('Failed to load exercises', 'red');
-      }
-      exercises = data;
+      // Load exercises
+      const { data, error } = await supabase.from('exercises').select('id, exercise_name');
+      if (!error) exercises = data;
 
-      // default date
+      // Default date
       document.getElementById('date').valueAsDate = new Date();
-      
-      // bind events
+
+      // Bind events
       document.getElementById('addEntry').addEventListener('click', addEntryRow);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
 
-      // initial row
+      // First entry row
       addEntryRow();
+      if (window.lucide) lucide.createIcons();
     }
 
     function addEntryRow() {
@@ -194,11 +146,10 @@
 
     async function handleSubmit(e) {
       e.preventDefault();
-      const type  = document.getElementById('type').value;
-      const date  = document.getElementById('date').value;
+      const type = document.getElementById('type').value;
+      const date = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
 
-      // collect rows
       const rows = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
         exercise_id: r.querySelector('.exercise_id').value,
         sets: parseInt(r.querySelector('.sets').value, 10),
@@ -206,49 +157,19 @@
         weight: parseFloat(r.querySelector('.weight').value) || 0
       })).filter(r => r.exercise_id);
 
-      if (!rows.length) {
-        return showStatus('Add at least one exercise!', 'red');
-      }
+      if (!rows.length) return showStatus('Add at least one exercise!', 'var(--color-accent-alt)');
 
-      // insert workout without returning
-      const { error: wErr } = await supabase
-        .from('workouts')
-        .insert([{ user_id: userId, date, type, notes }]);
-      if (wErr) {
-        console.error('Insert workout error:', wErr);
-        return showStatus('Failed to save workout.', 'red');
-      }
+      // Insert workout
+      const { data: w, error: wErr } = await supabase.from('workouts').insert([{ user_id: userId, date, type, notes }]).select('id').single();
+      if (wErr) return showStatus('Failed to save workout.', 'var(--color-accent-alt)');
 
-      // fetch the just-inserted workout id
-      const { data: workout, error: selErr } = await supabase
-        .from('workouts')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('date', date)
-        .eq('type', type)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (selErr) {
-        console.error('Fetch workout id error:', selErr);
-        return showStatus('Could not retrieve workout ID.', 'red');
-      }
+      // Insert entries
+      const { error: eErr } = await supabase.from('workout_entries').insert(
+        rows.map(r => ({ workout_id: w.id, ...r }))
+      );
+      if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
 
-      // insert entries
-      const child = rows.map(r => ({
-        workout_id: workout.id,
-        exercise_id: r.exercise_id,
-        sets: r.sets,
-        reps: r.reps,
-        weight: r.weight
-      }));
-      const { error: eErr } = await supabase.from('workout_entries').insert(child);
-      if (eErr) {
-        console.error('Insert entries error:', eErr);
-        return showStatus('Failed to save exercises.', 'red');
-      }
-
-      showStatus('Workout logged! 🎉', 'lightgreen');
+      showStatus('Workout logged! 🎉', 'var(--color-accent)');
     }
 
     function showStatus(msg, color) {
