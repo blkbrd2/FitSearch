@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
+  <!-- Navbar -->
   <nav>
     <a href="landing.html" class="active"><i data-lucide="home"></i><span>Home</span></a>
     <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
@@ -16,6 +17,7 @@
     <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
   </nav>
 
+  <!-- Main Content Container -->
   <main class="container">
     <div class="card">
       <h1>Welcome to FreeFit</h1>
@@ -40,8 +42,10 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Load Lucide icons
       if (window.lucide) lucide.createIcons();
 
+      // Supabase Auth check and fetch workout count
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       const userId = session.user.id;
