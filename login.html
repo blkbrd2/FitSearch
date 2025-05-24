@@ -11,12 +11,13 @@
   <!-- Main Content Container -->
   <main class="container">
     <div class="card" style="max-width: 350px;">
-      <h2 style="margin-bottom: 2rem;">Login to FreeFit</h2>
-      <form id="login-form" style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
+      <h2 style="margin-bottom: 2rem;">Welcome to FreeFit</h2>
+      <div style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
         <input id="email" type="email" placeholder="Email" autocomplete="username" required style="width: 100%;" />
         <input id="password" type="password" placeholder="Password" autocomplete="current-password" required style="width: 100%;" />
-        <button class="primary-btn" id="login-btn" type="submit" style="margin-top: 0.5rem;">Login</button>
-      </form>
+        <button class="primary-btn" id="login-btn" type="button" style="margin-top: 0.5rem;">Login</button>
+        <button class="secondary-btn" id="signup-btn" type="button">Sign Up</button>
+      </div>
       <p id="status" style="margin-top: 1.2rem;"></p>
     </div>
   </main>
@@ -29,17 +30,32 @@
     );
 
     document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('login-form');
+      if (window.lucide) lucide.createIcons();
       const status = document.getElementById('status');
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+
+      document.getElementById('login-btn').addEventListener('click', async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           status.textContent = error.message;
         } else {
-          window.location.href = "landing.html";
+          window.location.href = 'landing.html';
+        }
+      });
+
+      document.getElementById('signup-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if (!email || !password) {
+          status.textContent = 'Please enter an email and password to sign up.';
+          return;
+        }
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          status.textContent = error.message;
+        } else {
+          status.textContent = 'Sign-up successful! Check your email to confirm.';
         }
       });
     });
