@@ -4,71 +4,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeFit Login</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body {
-      background-color: #1e1e2f;
-      color: #fff;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    input {
-      margin: 0.5rem;
-      padding: 0.75rem;
-      border-radius: 8px;
-      border: none;
-      width: 250px;
-      background-color: #2c2c3c;
-      color: #fff;
-    }
-    input::placeholder {
-      color: #aaa;
-    }
-    button {
-      margin-top: 1rem;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      background-color: #ffb347;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    #status {
-      margin-top: 1rem;
-      color: #ff8080;
-    }
-  </style>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
-  <h2>Login to FreeFit</h2>
-  <input id="email" type="email" placeholder="Email" />
-  <input id="password" type="password" placeholder="Password" />
-  <button onclick="login()">Login</button>
-  <p id="status"></p>
+  <!-- Navbar -->
+  <nav>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="log.html"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
+  </nav>
 
-  <script>
-    const supabase = window.supabase.createClient(
+  <!-- Main Content Container -->
+  <main class="container">
+    <div class="card">
+      <h2>Login to FreeFit</h2>
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Password" />
+      <button class="primary-btn" id="login-btn">Login</button>
+      <p id="status"></p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
 
-    async function login() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        document.getElementById('status').textContent = error.message;
-      } else {
-        window.location.href = "landing.html"; // ⬅️ Redirects to new landing page
-      }
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          document.getElementById('status').textContent = error.message;
+        } else {
+          window.location.href = "landing.html";
+        }
+      });
+    });
   </script>
 </body>
 </html>
