@@ -1,6 +1,6 @@
 /* styles.css - Global design system for FreeFit */
 
-@import url("https://cdn.jsdelivr.net/npm/tabler-icons-webfont@latest/tabler-icons.min.css");
+@import url("https://unpkg.com/lucide-static@latest/font/lucide.css");
 
 /* ===== Design Tokens ===== */
 :root {
@@ -85,11 +85,9 @@ nav a.active {
   color: var(--color-accent-alt);
 }
 
-nav svg.icon {
-  width: 18px;
-  height: 18px;
-  stroke: currentColor;
-  stroke-width: 2;
+nav i.lucide {
+  font-size: 1.1rem;
+  vertical-align: middle;
 }
 
 /* ===== Layout Helpers ===== */
