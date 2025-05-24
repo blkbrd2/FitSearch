@@ -8,13 +8,47 @@
 </head>
 <body>
   <!-- NAVBAR -->
-  <nav>
-    <a href="landing.html" class="active"><i class="lucide lucide-home"></i>Home</a>
-    <a href="profile.html"><i class="lucide lucide-user"></i>Profile</a>
-    <a href="workouts.html"><i class="lucide lucide-dumbbell"></i>Workouts</a>
-    <a href="log.html"><i class="lucide lucide-edit"></i>Log Entry</a>
-    <a href="metrics.html"><i class="lucide lucide-bar-chart"></i>Metrics</a>
-  </nav>
+ nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  background-color: var(--color-bg-mid);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text);
+  font-weight: bold;
+  font-size: var(--fz-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+nav a:hover {
+  background-color: var(--color-bg-light);
+  color: var(--color-accent);
+}
+
+nav a.active {
+  background-color: var(--color-accent-alt);
+  color: var(--color-bg-dark);
+}
+
+nav i.lucide {
+  font-size: 1.1rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 
   <!-- HERO SECTION -->
   <div class="hero card">
