@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeFit – Metrics</n  <link rel="stylesheet" href="css/styles.css" />
+  <title>FreeFit – Metrics</title>
+  <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -37,7 +38,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
 
-      // Fetch workout entries joined with exercises to get muscle group and date
+      // Fetch workout entries with muscle groups
       const { data, error } = await supabase
         .from('workout_entries')
         .select(`
@@ -51,34 +52,39 @@
         return;
       }
 
-      // Process data: group counts per month per muscle
+      // Aggregate counts per month per muscle
       const counts = {};
-      data.forEach(row => {
-        const date = new Date(row.created_at);
-        const monthKey = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}`;
-        const muscle = row.exercises.primary_muscle_group || 'Other';
+      data.forEach(({ created_at, exercises: { primary_muscle_group } }) => {
+        const date = new Date(created_at);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+        const muscle = primary_muscle_group || 'Other';
         counts[monthKey] = counts[monthKey] || {};
         counts[monthKey][muscle] = (counts[monthKey][muscle] || 0) + 1;
       });
 
-      // Build labels and datasets
       const labels = Object.keys(counts).sort();
       const muscleGroups = [...new Set(data.map(r => r.exercises.primary_muscle_group))];
+      const colors = ['#4477ff', '#ff6b6b', '#ffb347', '#aaaaaa', '#2c2c3c'];
       const datasets = muscleGroups.map((muscle, i) => ({
-        label: muscle,
+        label: muscle || 'Other',
         data: labels.map(l => counts[l][muscle] || 0),
-        borderWidth: 2,
-        fill: false
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length],
+        fill: false,
+        tension: 0.2
       }));
 
-      // Render Chart.js line chart
       const ctx = document.getElementById('muscleChart').getContext('2d');
       new Chart(ctx, {
         type: 'line',
         data: { labels, datasets },
         options: {
           responsive: true,
-          scales: { x: { title: { display: true, text: 'Month' } }, y: { title: { display: true, text: 'Exercises Performed' }, beginAtZero: true } }
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            x: { title: { display: true, text: 'Month' } },
+            y: { title: { display: true, text: 'Exercises Performed' }, beginAtZero: true }
+          }
         }
       });
     });
