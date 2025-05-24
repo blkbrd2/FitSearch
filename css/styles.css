@@ -1,5 +1,7 @@
 /* styles.css - Global design system for FreeFit */
 
+@import url("https://cdn.jsdelivr.net/npm/tabler-icons-webfont@latest/tabler-icons.min.css");
+
 /* ===== Design Tokens ===== */
 :root {
   /* Colors */
@@ -61,16 +63,14 @@ a {
   text-decoration: none;
   font-size: var(--fz-sm);
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
-nav a::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background-color: var(--color-accent-alt);
-  border-radius: 50%;
-  margin-right: 0.5rem;
+a .ti {
+  font-size: 1.1rem;
+  line-height: 1;
   vertical-align: middle;
 }
 
