@@ -45,6 +45,18 @@
       color: var(--color-text);
       font-size: var(--fz-base);
     }
+
+    /* Ensure entry-row inputs match card styling */
+    .entry-row select,
+    .entry-row input {
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
   </style>
 </head>
 <body>
@@ -105,23 +117,17 @@
     document.addEventListener('DOMContentLoaded', init);
 
     async function init() {
-      // Auth check
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       userId = session.user.id;
 
-      // Load exercises
       const { data, error } = await supabase.from('exercises').select('id, exercise_name');
       if (!error) exercises = data;
 
-      // Default date
       document.getElementById('date').valueAsDate = new Date();
-
-      // Bind events
       document.getElementById('addEntry').addEventListener('click', addEntryRow);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
 
-      // First entry row
       addEntryRow();
       if (window.lucide) lucide.createIcons();
     }
@@ -159,11 +165,9 @@
 
       if (!rows.length) return showStatus('Add at least one exercise!', 'var(--color-accent-alt)');
 
-      // Insert workout
       const { data: w, error: wErr } = await supabase.from('workouts').insert([{ user_id: userId, date, type, notes }]).select('id').single();
       if (wErr) return showStatus('Failed to save workout.', 'var(--color-accent-alt)');
 
-      // Insert entries
       const { error: eErr } = await supabase.from('workout_entries').insert(
         rows.map(r => ({ workout_id: w.id, ...r }))
       );
