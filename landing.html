@@ -8,7 +8,77 @@ We are starting a new chat to continue development on the free fit app./\* style
 \--color-bg-dark:   #121212;
 \--color-bg-mid:    #1e1e2f;
 \--color-bg-light:  #2c2c3c;
-\--color-accent:    #4477ff;
+\--color-accent:    #4<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreeFit – Welcome</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav>
+    <a href="landing.html" class="active"><i class="ti ti-home"></i>Home</a>
+    <a href="profile.html"><i class="ti ti-user"></i>Profile</a>
+    <a href="workouts.html"><i class="ti ti-armchair"></i>Workouts</a>
+    <a href="log.html"><i class="ti ti-edit"></i>Log Entry</a>
+    <a href="metrics.html"><i class="ti ti-chart-bar"></i>Metrics</a>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <div class="hero card">
+    <h1>Welcome to FreeFit</h1>
+    <p>
+      Track your workouts, monitor your progress, and celebrate every milestone.
+      Get started by logging a new session or browsing your past workouts.
+    </p>
+    <div>
+      <button class="primary-btn" id="toLog">Log Workout</button>
+      <button class="secondary-btn" id="toWorkouts">View Workouts</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="summary" class="legal">
+    You have completed <span id="workoutCount">0</span> workouts!
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="legal">&copy; 2025 FreeFit. All rights reserved.</footer>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase = createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+    );
+
+    document.getElementById('toLog').addEventListener('click', () => {
+      window.location.href = 'log.html';
+    });
+    document.getElementById('toWorkouts').addEventListener('click', () => {
+      window.location.href = 'workouts.html';
+    });
+
+    async function loadCount() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return window.location.replace('login.html');
+      const userId = session.user.id;
+      const { count, error } = await supabase
+        .from('workouts')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      if (!error) {
+        document.getElementById('workoutCount').textContent = count;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCount);
+  </script>
+</body>
+</html>
+477ff;
 \--color-accent-alt:#ffb347;
 \--color-text:      #ffffff;
 \--color-text-muted:#aaaaaa;
