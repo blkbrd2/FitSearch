@@ -8,21 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/lucide.min.js"></script>
 </head>
 <body>
-  <div class="container">
-
-    <!-- Welcome Card -->
-    <div class="card">
-      <h1>Welcome to FreeFit</h1>
-      <button class="primary<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeFit – Welcome</title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/lucide.min.js"></script>
-</head>
-<body>
   <nav>
     <a href="landing.html" class="active"><i class="lucide lucide-home"></i><span>Home</span></a>
     <a href="profile.html"><i class="lucide lucide-user"></i><span>Profile</span></a>
@@ -31,15 +16,15 @@
     <a href="metrics.html"><i class="lucide lucide-bar-chart"></i><span>Metrics</span></a>
   </nav>
 
-  <div class="container">
+  <main class="container">
     <!-- Welcome Card -->
     <div class="card">
       <h1>Welcome to FreeFit</h1>
       <button class="primary-btn" id="toLog">Log Workout</button>
       <button class="secondary-btn" id="toWorkouts">View Workouts</button>
-      <div class="legal">Track your progress and crush your goals!</div>
+      <div class="legal" id="summary">Loading workout count...</div>
     </div>
-  </div>
+  </main>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -66,76 +51,7 @@
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId);
       if (!error) {
-        const summary = document.querySelector(".legal");
-        summary.innerHTML = `You have completed <strong>${count}</strong> workouts!`;
-      }
-    });
-  </script>
-</body>
-</html>
--btn" id="toLog">Log Workout</button>
-      <button class="secondary-btn" id="toWorkouts">View Workouts</button>
-      <div class="legal">Track your progress and crush your goals!</div>
-    </div>
-
-    <!-- Workout Summary Card -->
-    <div class="card">
-      <div class="search-bar">
-        <input type="text" placeholder="Search workouts..." />
-      </div>
-      <div class="tabs">
-        <div class="tab active">All</div>
-        <div class="tab">Recent</div>
-      </div>
-      <div class="task-list">
-        <div class="task">
-          <div class="checkbox"></div>
-          <div class="label">Chest + Triceps</div>
-        </div>
-        <div class="task">
-          <div class="checkbox"></div>
-          <div class="label">Back + Biceps</div>
-        </div>
-        <div class="task">
-          <div class="checkbox"></div>
-          <div class="label">Leg Day</div>
-        </div>
-      </div>
-      <div class="bottom-nav">
-        <i data-lucide="home"></i>
-        <i data-lucide="plus-circle"></i>
-        <i data-lucide="bar-chart-2"></i>
-      </div>
-    </div>
-
-  </div>
-
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-    const supabase = createClient(
-      'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
-    );
-
-    document.getElementById('toLog').addEventListener('click', () => {
-      window.location.href = 'log.html';
-    });
-    document.getElementById('toWorkouts').addEventListener('click', () => {
-      window.location.href = 'workouts.html';
-    });
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (window.lucide) lucide.createIcons();
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return window.location.replace('login.html');
-      const userId = session.user.id;
-      const { count, error } = await supabase
-        .from('workouts')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId);
-      if (!error) {
-        const summary = document.querySelector(".legal");
+        const summary = document.getElementById("summary");
         summary.innerHTML = `You have completed <strong>${count}</strong> workouts!`;
       }
     });
