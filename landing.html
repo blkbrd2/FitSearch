@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeFit – Welcome</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <!-- NAVBAR -->
@@ -19,7 +19,10 @@
   <!-- HERO SECTION -->
   <div class="hero card">
     <h1>Welcome to FreeFit</h1>
-    <p>Track your workouts, monitor your progress, and celebrate every milestone. Get started by logging a new session or browsing your past workouts.</p>
+    <p>
+      Track your workouts, monitor your progress, and celebrate every milestone.
+      Get started by logging a new session or browsing your past workouts.
+    </p>
     <div>
       <button class="primary-btn" id="toLog">Log Workout</button>
       <button class="secondary-btn" id="toWorkouts">View Workouts</button>
@@ -48,18 +51,19 @@
       window.location.href = 'workouts.html';
     });
 
-    // Load workout count
     async function loadCount() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       const userId = session.user.id;
       const { count, error } = await supabase
         .from('workouts')
-        .select('id', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
       if (!error) {
         document.getElementById('workoutCount').textContent = count;
       }
     }
+
     document.addEventListener('DOMContentLoaded', loadCount);
   </script>
 </body>
