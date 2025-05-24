@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreeFit – Metrics</n  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="exercise_search.html"><i data-lucide="search"></i><span>Exercises</span></a>
+    <a href="log.html"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html" class="active"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div class="card" style="max-width: 800px; width: 100%;">
+      <h2 style="margin-bottom: var(--space-md);">Exercises by Muscle Group Over Time</h2>
+      <canvas id="muscleChart"></canvas>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    const supabase = createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+    );
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
+
+      // Fetch workout entries joined with exercises to get muscle group and date
+      const { data, error } = await supabase
+        .from('workout_entries')
+        .select(`
+          created_at,
+          exercises ( primary_muscle_group )
+        `)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading metrics:', error);
+        return;
+      }
+
+      // Process data: group counts per month per muscle
+      const counts = {};
+      data.forEach(row => {
+        const date = new Date(row.created_at);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}`;
+        const muscle = row.exercises.primary_muscle_group || 'Other';
+        counts[monthKey] = counts[monthKey] || {};
+        counts[monthKey][muscle] = (counts[monthKey][muscle] || 0) + 1;
+      });
+
+      // Build labels and datasets
+      const labels = Object.keys(counts).sort();
+      const muscleGroups = [...new Set(data.map(r => r.exercises.primary_muscle_group))];
+      const datasets = muscleGroups.map((muscle, i) => ({
+        label: muscle,
+        data: labels.map(l => counts[l][muscle] || 0),
+        borderWidth: 2,
+        fill: false
+      }));
+
+      // Render Chart.js line chart
+      const ctx = document.getElementById('muscleChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          scales: { x: { title: { display: true, text: 'Month' } }, y: { title: { display: true, text: 'Exercises Performed' }, beginAtZero: true } }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
