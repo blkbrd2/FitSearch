@@ -8,23 +8,16 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav>
-    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
-    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
-    <a href="workouts.html"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
-    <a href="log.html"><i data-lucide="pencil"></i><span>Log Entry</span></a>
-    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
-  </nav>
-
   <!-- Main Content Container -->
   <main class="container">
-    <div class="card">
-      <h2>Login to FreeFit</h2>
-      <input id="email" type="email" placeholder="Email" />
-      <input id="password" type="password" placeholder="Password" />
-      <button class="primary-btn" id="login-btn">Login</button>
-      <p id="status"></p>
+    <div class="card" style="max-width: 350px;">
+      <h2 style="margin-bottom: 2rem;">Login to FreeFit</h2>
+      <form id="login-form" style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
+        <input id="email" type="email" placeholder="Email" autocomplete="username" required style="width: 100%;" />
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password" required style="width: 100%;" />
+        <button class="primary-btn" id="login-btn" type="submit" style="margin-top: 0.5rem;">Login</button>
+      </form>
+      <p id="status" style="margin-top: 1.2rem;"></p>
     </div>
   </main>
 
@@ -36,13 +29,15 @@
     );
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) lucide.createIcons();
-      document.getElementById('login-btn').addEventListener('click', async () => {
+      const form = document.getElementById('login-form');
+      const status = document.getElementById('status');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          document.getElementById('status').textContent = error.message;
+          status.textContent = error.message;
         } else {
           window.location.href = "landing.html";
         }
