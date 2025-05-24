@@ -7,6 +7,26 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
+  <style>
+    /* Ensure profile fields match log page styling */
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: var(--space-sm);
+      margin-top: var(--space-xs);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
+    .field label {
+      font-weight: bold;
+      margin-top: var(--space-md);
+      display: block;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -19,7 +39,7 @@
     <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
   </nav>
 
-  <!-- Main Content Container -->
+  <!-- Main Content -->
   <main class="container">
     <div class="card" style="max-width: 450px;">
       <h2 style="margin-bottom: var(--space-lg);">Edit Your Profile</h2>
@@ -95,8 +115,8 @@
       document.getElementById('gender').value = profile.gender || '';
     }
 
-    async function saveProfile(e) {
-      e.preventDefault();
+    async function saveProfile(evt) {
+      evt.preventDefault();
       const updates = {
         first_name: document.getElementById('first_name').value,
         last_name: document.getElementById('last_name').value,
@@ -111,13 +131,13 @@
         .update(updates)
         .eq('user_id', userId);
 
-      const status = document.getElementById('status');
+      const statusEl = document.getElementById('status');
       if (error) {
-        status.textContent = 'Error saving profile.';
-        status.style.color = 'var(--color-accent-alt)';
+        statusEl.textContent = 'Error saving profile.';
+        statusEl.style.color = 'var(--color-accent-alt)';
       } else {
-        status.textContent = 'Profile updated successfully!';
-        status.style.color = 'var(--color-accent)';
+        statusEl.textContent = 'Profile updated successfully!';
+        statusEl.style.color = 'var(--color-accent)';
       }
     }
 
