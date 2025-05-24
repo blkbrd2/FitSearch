@@ -1,0 +1,60 @@
+/* responsive.css - Media queries for FreeFit mobile responsiveness */
+
+/* Ensure navbar wraps and icons shrink on small screens */
+@media (max-width: 600px) {
+  nav {
+    flex-wrap: wrap;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  nav a {
+    flex: 1 1 20%;
+    font-size: var(--fz-xs);
+    padding: var(--space-xs) var(--space-sm);
+  }
+  nav i {
+    font-size: 1.25rem;
+  }
+}
+
+/* Card container width adjustments */
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-md);
+    margin: var(--space-sm);
+    width: 100%;
+    max-width: 100%;
+  }
+  .container {
+    padding: var(--space-md);
+  }
+}
+
+/* Forms and entry rows stack vertically on narrow screens */
+@media (max-width: 500px) {
+  .entry-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .entry-row select,
+  .entry-row input,
+  .entry-row button {
+    width: 100%;
+  }
+}
+
+/* Exercise cards full width */
+@media (max-width: 600px) {
+  .exercise-card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Metrics chart container responsive */
+@media (max-width: 600px) {
+  #muscleChart {
+    width: 100% !important;
+    height: auto !important;
+  }
+}
