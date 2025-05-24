@@ -58,13 +58,13 @@
       font-size: var(--fz-base);
       margin: 0;
     }
-    /* Center date picker on mobile */
-    @media (max-width: 600px) {
-      .field input[type="date"] {
-        max-width: 270px;
-        margin: var(--space-sm) auto;
-        display: block;
-      }
+    /* Date picker full-width and vertically centered */
+    .field input[type="date"] {
+      width: 100%;
+      padding: 0 var(--space-sm);
+      height: 2.5rem;
+      line-height: 2.5rem;
+      margin-top: var(--space-xs);
     }
   </style>
 </head>
@@ -163,7 +163,7 @@
         <input type="number" class="sets" placeholder="Sets" min="1" required />
         <input type="number" class="reps" placeholder="Reps" min="1" required />
         <input type="number" class="weight" placeholder="Weight" min="0" step="0.1" />
-        <button type="button" class="remove-entry">&times;</button>
+        <button type="button" class="remove-entry">\u00D7</button>
       `;
       const search = row.querySelector('.exercise_search');
       const hidden = row.querySelector('.exercise_id');
