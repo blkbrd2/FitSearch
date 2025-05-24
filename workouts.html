@@ -4,121 +4,54 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeFit – My Workouts</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
-    /* ===== Global Dark Theme ===== */
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #1e1e2f;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    a { color: inherit; text-decoration: none; }
-
-    /* ===== Navbar ===== */
-    nav {
-      background: #292946;
-      display: flex;
-      justify-content: space-around;
-      padding: 0.75rem 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    nav a {
-      font-weight: bold;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      transition: background 0.2s;
-    }
-    nav a:hover { background: #3a3a5a; }
-    nav a.active { background: #ffb347; color: #1e1e2f; }
-
-    /* ===== Page Content ===== */
-    main {
-      flex: 1;
-      max-width: 800px;
-      margin: 2rem auto;
-      width: 100%;
-    }
-    h2 {
-      color: #ffb347;
-      margin-top: 0;
-      text-align: center;
-    }
-    .btn {
-      display: inline-block;
-      margin: 0.5rem 0;
-      padding: 0.5rem 1rem;
-      background: #ffb347;
-      color: #1e1e2f;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    /* ===== List View ===== */
-    #listContainer table {
+    /* Page-specific table styling using CSS variables */
+    .workouts-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: var(--space-md);
     }
-    #listContainer th,
-    #listContainer td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #444;
+    .workouts-table th,
+    .workouts-table td {
+      padding: var(--space-sm);
+      border-bottom: 1px solid var(--color-border);
       text-align: left;
     }
-    #listContainer th {
-      background: #2c2c3c;
-      font-size: 0.9rem;
+    .workouts-table th {
+      background-color: var(--color-bg-light);
+      font-size: var(--fz-sm);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    #listContainer tbody tr:hover { background: #3a3a5a; }
+    .workouts-table tbody tr:hover {
+      background-color: var(--color-bg-light);
+    }
     .empty {
       text-align: center;
-      color: #aaa;
-      margin-top: 2rem;
+      color: var(--color-text-muted);
+      margin-top: var(--space-lg);
     }
-
-    /* ===== Detail View ===== */
-    #detailContainer { display: none; }
-    #detailContainer .field {
-      margin: 1rem 0;
-    }
-    #detailContainer table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    #detailContainer th,
-    #detailContainer td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #444;
-      text-align: left;
-    }
-    #detailContainer th { background: #2c2c3c; }
   </style>
 </head>
 <body>
-  <!-- NAVBAR -->
+  <!-- Navbar -->
   <nav>
-    <a href="landing.html">🏠 Home</a>
-    <a href="profile.html">👤 Profile</a>
-    <a href="workouts.html" class="active">💪 Workouts</a>
-    <a href="log.html">📝 Log Entry</a>
-    <a href="metrics.html">📊 Metrics</a>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html" class="active"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="log.html"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
   </nav>
 
-  <main>
-    <h2 id="pageTitle">My Workouts</h2>
-    <button class="btn" id="newWorkout">+ New Workout</button>
+  <main class="container">
+    <h2 style="color: var(--color-accent-alt); text-align: center; margin-top: 0;">My Workouts</h2>
+    <button class="primary-btn" id="newWorkout">+ New Workout</button>
 
     <!-- List View -->
     <div id="listContainer">
-      <table>
+      <table class="workouts-table">
         <thead>
           <tr>
             <th>Date</th>
@@ -134,17 +67,22 @@
     </div>
 
     <!-- Detail View -->
-    <div id="detailContainer">
-      <button class="btn" id="backToList">← Back</button>
-      <h2>Workout Details</h2>
+    <div id="detailContainer" style="display: none;">
+      <button class="secondary-btn" id="backToList">← Back</button>
+      <h2 style="color: var(--color-accent-alt); text-align: center;">Workout Details</h2>
       <div class="field"><strong>Date:</strong> <span id="detailDate"></span></div>
       <div class="field"><strong>Type:</strong> <span id="detailType"></span></div>
       <div class="field"><strong>Notes:</strong> <span id="detailNotes"></span></div>
 
-      <h3>Exercises</h3>
-      <table>
+      <h3 style="margin-top: var(--space-md);">Exercises</h3>
+      <table class="workouts-table">
         <thead>
-          <tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight</th></tr>
+          <tr>
+            <th>Exercise</th>
+            <th>Sets</th>
+            <th>Reps</th>
+            <th>Weight</th>
+          </tr>
         </thead>
         <tbody id="entriesList"></tbody>
       </table>
@@ -161,6 +99,7 @@
 
     let exercises = [];
 
+    // Navigation actions
     document.getElementById('newWorkout').addEventListener('click', () => {
       window.location.href = 'log.html';
     });
@@ -169,25 +108,23 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       const userId = session.user.id;
 
-      // load master exercises
-      const { data, error: exErr } = await supabase.from('exercises').select('id, exercise_name');
-      exercises = data || [];
+      // Load master exercises
+      const { data: exData } = await supabase.from('exercises').select('id, exercise_name');
+      exercises = exData || [];
 
       const params = new URLSearchParams(window.location.search);
       const viewId = params.get('view');
       if (viewId) {
-        document.getElementById('pageTitle').textContent = 'Workout Details';
-        document.getElementById('newWorkout').style.display = 'none';
         document.getElementById('listContainer').style.display = 'none';
         document.getElementById('detailContainer').style.display = 'block';
         return showWorkoutDetail(viewId);
       }
 
-      // otherwise list
       loadWorkoutList(userId);
     });
 
@@ -201,7 +138,6 @@
       const emptyMsg = document.getElementById('emptyMessage');
       listEl.innerHTML = '';
       if (error) {
-        console.error(error);
         emptyMsg.textContent = 'Failed to load workouts.';
         return;
       }
@@ -214,10 +150,10 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${new Date(w.date).toLocaleDateString()}</td>
-          <td>${w.type.charAt(0).toUpperCase()+w.type.slice(1)}</td>
+          <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
           <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
-          <td><button class="btn" data-id="${w.id}">View</button></td>
+          <td><button class="primary-btn" data-id="${w.id}">View</button></td>
         `;
         tr.querySelector('button').addEventListener('click', () => {
           window.location.href = `workouts.html?view=${w.id}`;
@@ -230,18 +166,13 @@
       const detailEmpty = document.getElementById('emptyDetail');
       detailEmpty.textContent = 'Loading...';
 
-      const [{ data: workout, error: wErr }, { data: entries, error: eErr }] = await Promise.all([
+      const [{ data: workout }, { data: entries }] = await Promise.all([
         supabase.from('workouts').select('date, type, notes').eq('id', id).single(),
         supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
       ]);
-      if (wErr || eErr) {
-        console.error(wErr || eErr);
-        detailEmpty.textContent = 'Failed to load details.';
-        return;
-      }
 
       document.getElementById('detailDate').textContent = new Date(workout.date).toLocaleDateString();
-      document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase()+workout.type.slice(1);
+      document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
       document.getElementById('detailNotes').textContent = workout.notes || '';
 
       const entriesEl = document.getElementById('entriesList');
