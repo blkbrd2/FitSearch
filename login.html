@@ -5,20 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeFit Login</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
+  <style>
+    /* Match login fields to pill-style from log/profile pages */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .field input {
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
+    .primary-btn, .secondary-btn {
+      margin-top: var(--space-md);
+    }
+  </style>
 </head>
 <body>
   <!-- Main Content Container -->
   <main class="container">
     <div class="card" style="max-width: 350px;">
-      <h2 style="margin-bottom: 2rem;">Welcome to FreeFit</h2>
-      <div style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
-        <input id="email" type="email" placeholder="Email" autocomplete="username" required style="width: 100%;" />
-        <input id="password" type="password" placeholder="Password" autocomplete="current-password" required style="width: 100%;" />
-        <button class="primary-btn" id="login-btn" type="button" style="margin-top: 0.5rem;">Login</button>
+      <h2 style="margin-bottom: var(--space-lg);">Welcome to FreeFit</h2>
+      <form id="authForm" style="display: flex; flex-direction: column; gap: var(--space-md);">
+        <div class="field">
+          <input id="email" type="email" placeholder="Email" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <input id="password" type="password" placeholder="Password" autocomplete="current-password" required />
+        </div>
+        <button class="primary-btn" id="login-btn" type="button">Login</button>
         <button class="secondary-btn" id="signup-btn" type="button">Sign Up</button>
-      </div>
-      <p id="status" style="margin-top: 1.2rem;"></p>
+      </form>
+      <p id="status" style="margin-top: var(--space-md);"></p>
     </div>
   </main>
 
@@ -26,7 +51,7 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+      'YOUR_SUPABASE_ANON_KEY'
     );
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -48,14 +73,14 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         if (!email || !password) {
-          status.textContent = 'Please enter an email and password to sign up.';
+          status.textContent = 'Enter both email and password to sign up.';
           return;
         }
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) {
           status.textContent = error.message;
         } else {
-          status.textContent = 'Sign-up successful! Check your email to confirm.';
+          status.textContent = 'Sign-up successful! Please check your email.';
         }
       });
     });
