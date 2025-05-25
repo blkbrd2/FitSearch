@@ -96,10 +96,19 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+      'YOUR_SUPABASE_KEY'
     );
 
     let exercises = [];
+
+    // Utility to format date strings as local dates (avoiding timezone shift)
+    function formatDate(dateStr) {
+      // Extract YYYY-MM-DD portion
+      const [datePart] = dateStr.split('T');
+      const [year, month, day] = datePart.split('-');
+      // Construct a local Date
+      return new Date(year, month - 1, day).toLocaleDateString();
+    }
 
     // Navigation actions
     document.getElementById('newWorkout').addEventListener('click', () => {
@@ -151,7 +160,7 @@
       data.forEach(w => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${new Date(w.date).toLocaleDateString()}</td>
+          <td>${formatDate(w.date)}</td>
           <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
           <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
@@ -173,7 +182,7 @@
         supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
       ]);
 
-      document.getElementById('detailDate').textContent = new Date(workout.date).toLocaleDateString();
+      document.getElementById('detailDate').textContent = formatDate(workout.date);
       document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
       document.getElementById('detailNotes').textContent = workout.notes || '';
 
