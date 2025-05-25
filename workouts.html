@@ -196,9 +196,10 @@
         supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
       ]);
 
-      // Render date field with span
+      // Render date field with span, store raw ISO date in data attribute
       const dateField = document.getElementById('dateField');
-      dateField.innerHTML = `<strong>Date:</strong><span id="detailDate">${new Date(workout.date).toLocaleDateString()}</span>`;
+      const rawISO = workout.date.split('T')[0];
+      dateField.innerHTML = `<strong>Date:</strong><span id=\"detailDate\" data-date=\"${rawISO}\">${new Date(rawISO).toLocaleDateString()}</span>`;
 
       document.getElementById('detailType').textContent = capitalize(workout.type);
       document.getElementById('detailNotes').textContent = workout.notes||'';
@@ -223,10 +224,12 @@
     }
 
     function startEdit() {
+      // Replace date span with date input pre-filled from data-date attribute
       const span = document.getElementById('detailDate');
-      const currentVal = span.textContent.split('/').reverse().join('-');
-      span.outerHTML = `<input type="date" id="editDate" value="${currentVal}" class="field-input" />`;
+      const raw = span.getAttribute('data-date');
+      span.outerHTML = `<input type=\"date\" id=\"editDate\" class=\"field-input\" value=\"${raw}\" />`;
       toggleButtons(true);
+    }
     }
 
     function cancelEdit() {
