@@ -96,8 +96,7 @@
       <h2 style="color: var(--color-accent-alt); text-align: center;">Workout Details</h2>
 
       <div class="field" id="dateField">
-        <strong>Date:</strong>
-        <span id="detailDate"></span>
+        <!-- Will be populated by JS -->
       </div>
       <div class="field">
         <strong>Type:</strong> <span id="detailType"></span>
@@ -197,8 +196,10 @@
         supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
       ]);
 
-      // Populate fields
-      document.getElementById('detailDate').textContent = new Date(workout.date).toLocaleDateString();
+      // Render date field with span
+      const dateField = document.getElementById('dateField');
+      dateField.innerHTML = `<strong>Date:</strong><span id="detailDate">${new Date(workout.date).toLocaleDateString()}</span>`;
+
       document.getElementById('detailType').textContent = capitalize(workout.type);
       document.getElementById('detailNotes').textContent = workout.notes||'';
 
@@ -222,18 +223,13 @@
     }
 
     function startEdit() {
-      const dateField = document.getElementById('dateField');
       const span = document.getElementById('detailDate');
-      const current = span.textContent.split('/').reverse().join('-');
-      dateField.innerHTML = `
-        <strong>Date:</strong>
-        <input type="date" id="editDate" value="${current}" />
-      `;
+      const currentVal = span.textContent.split('/').reverse().join('-');
+      span.outerHTML = `<input type="date" id="editDate" value="${currentVal}" class="field-input" />`;
       toggleButtons(true);
     }
 
     function cancelEdit() {
-      // reload detail to restore original
       showWorkoutDetail(currentWorkoutId);
       toggleButtons(false);
     }
@@ -241,8 +237,10 @@
     async function saveChanges() {
       const input = document.getElementById('editDate');
       const newDate = input.value;
-      await supabase.from('workouts').update({ date: newDate }).eq('id', currentWorkoutId);
-      cancelEdit();
+      const { error } = await supabase.from('workouts').update({ date: newDate }).eq('id', currentWorkoutId);
+      if (error) return console.error('Update failed', error);
+      showWorkoutDetail(currentWorkoutId);
+      toggleButtons(false);
     }
 
     function toggleButtons(editing) {
