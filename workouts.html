@@ -34,28 +34,6 @@
       color: var(--color-text-muted);
       margin-top: var(--space-lg);
     }
-    .field {
-      margin-bottom: var(--space-md);
-    }
-    .field strong {
-      display: block;
-      margin-bottom: var(--space-xs);
-    }
-    .field input {
-      width: 100%;
-      padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
-    }
-    #editControls {
-      display: flex;
-      justify-content: center;
-      gap: var(--space-md);
-      margin: var(--space-md) 0;
-    }
   </style>
 </head>
 <body>
@@ -94,22 +72,9 @@
     <div id="detailContainer" style="display: none;">
       <button class="secondary-btn" id="backToList">← Back</button>
       <h2 style="color: var(--color-accent-alt); text-align: center;">Workout Details</h2>
-
-      <div class="field" id="dateField">
-        <!-- Will be populated by JS -->
-      </div>
-      <div class="field">
-        <strong>Type:</strong> <span id="detailType"></span>
-      </div>
-      <div class="field">
-        <strong>Notes:</strong> <span id="detailNotes"></span>
-      </div>
-
-      <div id="editControls">
-        <button class="secondary-btn" id="editBtn">Edit Workout</button>
-        <button class="primary-btn" id="saveBtn" style="display: none;">Save Changes</button>
-        <button class="secondary-btn" id="cancelBtn" style="display: none;">Cancel</button>
-      </div>
+      <div class="field"><strong>Date:</strong> <span id="detailDate"></span></div>
+      <div class="field"><strong>Type:</strong> <span id="detailType"></span></div>
+      <div class="field"><strong>Notes:</strong> <span id="detailNotes"></span></div>
 
       <h3 style="margin-top: var(--space-md);">Exercises</h3>
       <table class="workouts-table">
@@ -135,10 +100,14 @@
     );
 
     let exercises = [];
-    let currentWorkoutId = null;
 
-    document.getElementById('newWorkout').addEventListener('click', () => window.location.href = 'log.html');
-    document.getElementById('backToList').addEventListener('click', () => window.location.href = 'workouts.html');
+    // Navigation actions
+    document.getElementById('newWorkout').addEventListener('click', () => {
+      window.location.href = 'log.html';
+    });
+    document.getElementById('backToList').addEventListener('click', () => {
+      window.location.href = 'workouts.html';
+    });
 
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
@@ -146,6 +115,7 @@
       if (!session) return window.location.replace('login.html');
       const userId = session.user.id;
 
+      // Load master exercises
       const { data: exData } = await supabase.from('exercises').select('id, exercise_name');
       exercises = exData || [];
 
@@ -169,25 +139,32 @@
       const listEl = document.getElementById('workoutList');
       const emptyMsg = document.getElementById('emptyMessage');
       listEl.innerHTML = '';
-      if (error) return emptyMsg.textContent = 'Failed to load workouts.';
-      if (!data.length) return emptyMsg.textContent = 'No workouts yet.';
+      if (error) {
+        emptyMsg.textContent = 'Failed to load workouts.';
+        return;
+      }
+      if (!data.length) {
+        emptyMsg.textContent = 'No workouts yet.';
+        return;
+      }
       emptyMsg.style.display = 'none';
       data.forEach(w => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${new Date(w.date).toLocaleDateString()}</td>
-          <td>${capitalize(w.type)}</td>
-          <td>${w.notes||''}</td>
+          <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
+          <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
           <td><button class="primary-btn" data-id="${w.id}">View</button></td>
         `;
-        tr.querySelector('button').addEventListener('click', () => window.location.href=`workouts.html?view=${w.id}`);
+        tr.querySelector('button').addEventListener('click', () => {
+          window.location.href = `workouts.html?view=${w.id}`;
+        });
         listEl.appendChild(tr);
       });
     }
 
     async function showWorkoutDetail(id) {
-      currentWorkoutId = id;
       const detailEmpty = document.getElementById('emptyDetail');
       detailEmpty.textContent = 'Loading...';
 
@@ -196,63 +173,31 @@
         supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
       ]);
 
-      // Render date field with span, store raw ISO date in data attribute
-      const dateField = document.getElementById('dateField');
-      const rawISO = workout.date.split('T')[0];
-      dateField.innerHTML = `<strong>Date:</strong><span id=\"detailDate\" data-date=\"${rawISO}\">${new Date(rawISO).toLocaleDateString()}</span>`;
+      document.getElementById('detailDate').textContent = new Date(workout.date).toLocaleDateString();
+      document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
+      document.getElementById('detailNotes').textContent = workout.notes || '';
 
-      document.getElementById('detailType').textContent = capitalize(workout.type);
-      document.getElementById('detailNotes').textContent = workout.notes||'';
-
-      // Edit control handlers
-      document.getElementById('editBtn').onclick = startEdit;
-      document.getElementById('cancelBtn').onclick = cancelEdit;
-      document.getElementById('saveBtn').onclick = saveChanges;
-
-      // Populate entries table
       const entriesEl = document.getElementById('entriesList');
       entriesEl.innerHTML = '';
-      if (!entries.length) { detailEmpty.textContent='No exercises recorded.'; return; }
-      detailEmpty.style.display='none';
+      if (!entries.length) {
+        detailEmpty.textContent = 'No exercises recorded.';
+        return;
+      }
+      detailEmpty.style.display = 'none';
+
       entries.forEach(r => {
-        const exercise = exercises.find(e=>e.id===r.exercise_id);
-        const name = exercise?exercise.exercise_name:r.exercise_id;
+        const exercise = exercises.find(e => e.id === r.exercise_id);
+        const name = exercise ? exercise.exercise_name : r.exercise_id;
         const tr = document.createElement('tr');
-        tr.innerHTML=`<td>${name}</td><td>${r.sets}</td><td>${r.reps}</td><td>${r.weight}</td>`;
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${r.sets}</td>
+          <td>${r.reps}</td>
+          <td>${r.weight}</td>
+        `;
         entriesEl.appendChild(tr);
       });
     }
-
-    function startEdit() {
-      // Replace date span with date input pre-filled from data-date attribute
-      const span = document.getElementById('detailDate');
-      const raw = span.getAttribute('data-date');
-      span.outerHTML = `<input type=\"date\" id=\"editDate\" class=\"field-input\" value=\"${raw}\" />`;
-      toggleButtons(true);
-    }
-    }
-
-    function cancelEdit() {
-      showWorkoutDetail(currentWorkoutId);
-      toggleButtons(false);
-    }
-
-    async function saveChanges() {
-      const input = document.getElementById('editDate');
-      const newDate = input.value;
-      const { error } = await supabase.from('workouts').update({ date: newDate }).eq('id', currentWorkoutId);
-      if (error) return console.error('Update failed', error);
-      showWorkoutDetail(currentWorkoutId);
-      toggleButtons(false);
-    }
-
-    function toggleButtons(editing) {
-      document.getElementById('editBtn').style.display = editing? 'none':'inline-block';
-      document.getElementById('saveBtn').style.display = editing? 'inline-block':'none';
-      document.getElementById('cancelBtn').style.display = editing? 'inline-block':'none';
-    }
-
-    function capitalize(str) { return str.charAt(0).toUpperCase()+str.slice(1); }
   </script>
 </body>
 </html>
