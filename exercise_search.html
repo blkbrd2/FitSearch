@@ -8,8 +8,14 @@
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
 
-  <!-- page-specific tweaks -->
   <style>
+    /* Page title in salmon accent */
+    .page-title {
+      color: var(--color-accent-alt);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Filters layout */
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -35,8 +41,37 @@
       gap: var(--space-xs);
       font-size: var(--fz-base);
     }
-    #results {
-      margin-top: var(--space-lg);
+
+    /* Exercise cards */
+    .exercise-card {
+      background: var(--color-bg-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      text-align: left;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+    .exercise-card h3 {
+      margin-top: 0;
+      margin-bottom: var(--space-sm);
+    }
+    .exercise-card p {
+      margin: var(--space-xs) 0;
+      font-size: var(--fz-base);
+      line-height: 1.4;
+    }
+
+    /* Favorite star styling */
+    .favorite-btn {
+      position: absolute;
+      top: var(--space-sm);
+      right: var(--space-sm);
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: var(--color-accent-alt);
     }
   </style>
 </head>
@@ -53,7 +88,7 @@
 
   <main class="container">
     <div class="card" style="max-width:800px; width:100%;">
-      <h2 style="margin-bottom: var(--space-lg);">Exercise Search</h2>
+      <h2 class="page-title">Exercise Search</h2>
       
       <div class="filters">
         <div class="field">
@@ -64,21 +99,21 @@
             <option>All Muscles</option>
             <option>Chest</option>
             <option>Back</option>
-            <!-- add more -->
+            <!-- etc. -->
           </select>
         </div>
         <div class="field">
           <select id="equipmentSelect">
             <option>All Equipment</option>
             <option>TRX</option>
-            <!-- add more -->
+            <!-- etc. -->
           </select>
         </div>
         <div class="field">
           <select id="movementSelect">
             <option>All Movements</option>
             <option>Push</option>
-            <!-- add more -->
+            <!-- etc. -->
           </select>
         </div>
         <label>
@@ -95,22 +130,22 @@
   <script type="module">
     if (window.lucide) lucide.createIcons();
 
-    const searchInput = document.getElementById('searchInput');
-    const muscleSelect = document.getElementById('muscleSelect');
-    const equipmentSelect = document.getElementById('equipmentSelect');
+    const searchInput    = document.getElementById('searchInput');
+    const muscleSelect   = document.getElementById('muscleSelect');
+    const equipmentSelect= document.getElementById('equipmentSelect');
     const movementSelect = document.getElementById('movementSelect');
-    const favoritesOnlyCheckbox = document.getElementById('favoritesOnly');
-    const results = document.getElementById('results');
-    let favorites = JSON.parse(localStorage.getItem('favorites')||'[]');
+    const favoritesOnly  = document.getElementById('favoritesOnly');
+    const results        = document.getElementById('results');
+    let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
-    function toggleFavorite(name){
+    function toggleFavorite(name) {
       const i = favorites.indexOf(name);
       i > -1 ? favorites.splice(i,1) : favorites.push(name);
       localStorage.setItem('favorites', JSON.stringify(favorites));
       filterExercises();
     }
 
-    function displayExercises(list){
+    function displayExercises(list) {
       results.innerHTML = '';
       if (!list.length) {
         results.innerHTML = '<p class="legal">No exercises found.</p>';
@@ -121,8 +156,8 @@
         const card = document.createElement('div');
         card.className = 'exercise-card';
         card.innerHTML = `
-          <button class="favorite-btn ${isFav?'active':''}" aria-label="Toggle Favorite">
-            ${isFav?'★':'☆'}
+          <button class="favorite-btn" aria-label="Toggle Favorite">
+            ${isFav ? '★' : '☆'}
           </button>
           <h3>${ex.exercise_name}</h3>
           <p><strong>Muscle:</strong> ${ex.primary_muscle_group}</p>
@@ -131,20 +166,20 @@
           <p>${ex.description}</p>
         `;
         card.querySelector('.favorite-btn')
-            .addEventListener('click', ()=> toggleFavorite(ex.exercise_name));
+            .addEventListener('click', () => toggleFavorite(ex.exercise_name));
         results.appendChild(card);
       });
     }
 
-    function filterExercises(){
-      const s = searchInput.value.toLowerCase();
-      const m = muscleSelect.value;
-      const e = equipmentSelect.value;
+    function filterExercises() {
+      const s  = searchInput.value.toLowerCase();
+      const m  = muscleSelect.value;
+      const e  = equipmentSelect.value;
       const mv = movementSelect.value;
-      const fo = favoritesOnlyCheckbox.checked;
+      const fo = favoritesOnly.checked;
       const filtered = exercises.filter(ex =>
         (!fo || favorites.includes(ex.exercise_name)) &&
-        (m==='All Muscles'    || ex.primary_muscle_group.includes(m)) &&
+        (m==='All Muscles'    || ex.primary_muscle_group === m) &&
         (e==='All Equipment'  || ex.equipment_needed.includes(e)) &&
         (mv==='All Movements' || ex.movement_type === mv) &&
         (ex.exercise_name.toLowerCase().includes(s) ||
@@ -155,7 +190,7 @@
 
     [searchInput, muscleSelect, equipmentSelect, movementSelect]
       .forEach(el => el.addEventListener('change', filterExercises));
-    favoritesOnlyCheckbox.addEventListener('input', filterExercises);
+    favoritesOnly.addEventListener('input', filterExercises);
 
     displayExercises(exercises);
   </script>
