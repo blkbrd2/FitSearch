@@ -9,13 +9,10 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
 
   <style>
-    /* Page title in salmon accent */
     .page-title {
       color: var(--color-accent-alt);
       margin-bottom: var(--space-lg);
     }
-
-    /* Filters layout */
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -41,8 +38,6 @@
       gap: var(--space-xs);
       font-size: var(--fz-base);
     }
-
-    /* Exercise cards */
     .exercise-card {
       background: var(--color-bg-light);
       border-radius: var(--radius-md);
@@ -61,8 +56,6 @@
       font-size: var(--fz-base);
       line-height: 1.4;
     }
-
-    /* Favorite star styling */
     .favorite-btn {
       position: absolute;
       top: var(--space-sm);
@@ -76,7 +69,6 @@
   </style>
 </head>
 <body>
-  <!-- Navbar -->
   <nav>
     <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
     <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
@@ -95,26 +87,13 @@
           <input id="searchInput" type="text" placeholder="Search by name or description" />
         </div>
         <div class="field">
-          <select id="muscleSelect">
-            <option>All Muscles</option>
-            <option>Chest</option>
-            <option>Back</option>
-            <!-- etc. -->
-          </select>
+          <select id="muscleSelect"></select>
         </div>
         <div class="field">
-          <select id="equipmentSelect">
-            <option>All Equipment</option>
-            <option>TRX</option>
-            <!-- etc. -->
-          </select>
+          <select id="equipmentSelect"></select>
         </div>
         <div class="field">
-          <select id="movementSelect">
-            <option>All Movements</option>
-            <option>Push</option>
-            <!-- etc. -->
-          </select>
+          <select id="movementSelect"></select>
         </div>
         <label>
           <input type="checkbox" id="favoritesOnly" />
@@ -130,13 +109,40 @@
   <script type="module">
     if (window.lucide) lucide.createIcons();
 
-    const searchInput    = document.getElementById('searchInput');
-    const muscleSelect   = document.getElementById('muscleSelect');
-    const equipmentSelect= document.getElementById('equipmentSelect');
-    const movementSelect = document.getElementById('movementSelect');
-    const favoritesOnly  = document.getElementById('favoritesOnly');
-    const results        = document.getElementById('results');
-    let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const searchInput     = document.getElementById('searchInput');
+    const muscleSelect    = document.getElementById('muscleSelect');
+    const equipmentSelect = document.getElementById('equipmentSelect');
+    const movementSelect  = document.getElementById('movementSelect');
+    const favoritesOnly   = document.getElementById('favoritesOnly');
+    const results         = document.getElementById('results');
+    let favorites         = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+    // Populate dropdowns from your data
+    function populateDropdowns() {
+      const muscles    = new Set();
+      const equipments = new Set();
+      const movements  = new Set();
+
+      exercises.forEach(ex => {
+        muscles.add(ex.primary_muscle_group);
+        equipments.add(ex.equipment_needed);
+        movements.add(ex.movement_type);
+      });
+
+      function fill(selectEl, items, label) {
+        selectEl.innerHTML = `<option>All ${label}</option>`;
+        Array.from(items).sort().forEach(val => {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val;
+          selectEl.appendChild(opt);
+        });
+      }
+
+      fill(muscleSelect,    muscles,    'Muscles');
+      fill(equipmentSelect, equipments, 'Equipment');
+      fill(movementSelect,  movements,  'Movements');
+    }
 
     function toggleFavorite(name) {
       const i = favorites.indexOf(name);
@@ -172,23 +178,27 @@
     }
 
     function filterExercises() {
-      const s  = searchInput.value.toLowerCase();
-      const m  = muscleSelect.value;
-      const e  = equipmentSelect.value;
-      const mv = movementSelect.value;
-      const fo = favoritesOnly.checked;
+      const s   = searchInput.value.toLowerCase();
+      const m   = muscleSelect.value;
+      const e   = equipmentSelect.value;
+      const mv  = movementSelect.value;
+      const fo  = favoritesOnly.checked;
+
       const filtered = exercises.filter(ex =>
         (!fo || favorites.includes(ex.exercise_name)) &&
-        (m==='All Muscles'    || ex.primary_muscle_group === m) &&
-        (e==='All Equipment'  || ex.equipment_needed.includes(e)) &&
-        (mv==='All Movements' || ex.movement_type === mv) &&
+        (m === `All Muscles`    || ex.primary_muscle_group === m) &&
+        (e === `All Equipment`  || ex.equipment_needed.includes(e)) &&
+        (mv === `All Movements` || ex.movement_type === mv) &&
         (ex.exercise_name.toLowerCase().includes(s) ||
          ex.description.toLowerCase().includes(s))
       );
+
       displayExercises(filtered);
     }
 
-    [searchInput, muscleSelect, equipmentSelect, movementSelect]
+    // Initialize
+    populateDropdowns();
+    [ searchInput, muscleSelect, equipmentSelect, movementSelect ]
       .forEach(el => el.addEventListener('change', filterExercises));
     favoritesOnly.addEventListener('input', filterExercises);
 
