@@ -34,6 +34,16 @@
       color: var(--color-text-muted);
       margin-top: var(--space-lg);
     }
+    /* Styled filter dropdown to match global form controls */
+    .filter-row select {
+      background-color: var(--color-bg-light);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-size: var(--fz-base);
+      appearance: none;
+    }
     .filter-row {
       margin: var(--space-md) 0;
       display: flex;
@@ -66,7 +76,7 @@
       <!-- Filter -->
       <div class="filter-row">
         <label for="typeFilter">Filter by type:</label>
-        <select id="typeFilter" class="input">
+        <select id="typeFilter">
           <option value="">All</option>
         </select>
       </div>
@@ -107,7 +117,8 @@
         <tbody id="entriesList"></tbody>
       </table>
       <div class="empty" id="emptyDetail">Loading...</div>
-    </</main>
+    </div>
+  </main>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -118,7 +129,6 @@
 
     let exercises = [];
 
-    // Utility to format date strings as local dates (avoiding timezone shift)
     function formatDate(dateStr) {
       const [datePart] = dateStr.split('T');
       const [year, month, day] = datePart.split('-');
@@ -138,20 +148,20 @@
       const { data: exData } = await supabase.from('exercises').select('id, exercise_name');
       exercises = exData || [];
 
-      // Populate type filter
-      const { data: types } = await supabase
+      // Populate and style type filter with deduped values
+      const { data: typesData } = await supabase
         .from('workouts')
         .select('type', { distinct: true })
-        .eq('user_id', userId)
-        .order('type', { ascending: true });
+        .eq('user_id', userId);
       const typeFilter = document.getElementById('typeFilter');
-      types.forEach(t => {
+      const types = typesData.map(item => item.type);
+      const uniqueTypes = [...new Set(types)].sort();
+      uniqueTypes.forEach(type => {
         const opt = document.createElement('option');
-        opt.value = t.type;
-        opt.textContent = t.type.charAt(0).toUpperCase() + t.type.slice(1);
+        opt.value = type;
+        opt.textContent = type.charAt(0).toUpperCase() + type.slice(1);
         typeFilter.append(opt);
       });
-
       typeFilter.addEventListener('change', () => loadWorkoutList(userId));
 
       const params = new URLSearchParams(window.location.search);
@@ -178,7 +188,10 @@
       const emptyMsg = document.getElementById('emptyMessage');
       listEl.innerHTML = '';
       emptyMsg.style.display = 'block';
-      if (error) return void (emptyMsg.textContent = 'Failed to load workouts.');
+      if (error) {
+        emptyMsg.textContent = 'Failed to load workouts.';
+        return;
+      }
       if (!data.length) {
         emptyMsg.textContent = selectedType ? 'No workouts of this type.' : 'No workouts yet.';
         return;
@@ -220,6 +233,7 @@
         return;
       }
       detailEmpty.style.display = 'none';
+
       entries.forEach(r => {
         const exercise = exercises.find(e => e.id === r.exercise_id);
         const name = exercise ? exercise.exercise_name : r.exercise_id;
