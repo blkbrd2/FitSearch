@@ -64,7 +64,16 @@
       font-size: var(--fz-base);
       font-weight: bold;
       cursor: pointer;
-      margin-left: var(--space-sm);
+    }
+    /* Ensure buttons sit side-by-side */
+    .workouts-table td:last-child {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .workouts-table td button {
+      display: inline-flex;
+      align-items: center;
     }
   </style>
 </head>
