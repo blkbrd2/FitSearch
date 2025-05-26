@@ -42,6 +42,7 @@
     }
     .filter-row label {
       font-weight: bold;
+      color: var(--color-text);
     }
   </style>
 </head>
@@ -65,7 +66,7 @@
       <!-- Filter -->
       <div class="filter-row">
         <label for="typeFilter">Filter by type:</label>
-        <select id="typeFilter">
+        <select id="typeFilter" class="input">
           <option value="">All</option>
         </select>
       </div>
@@ -106,8 +107,7 @@
         <tbody id="entriesList"></tbody>
       </table>
       <div class="empty" id="emptyDetail">Loading...</div>
-    </div>
-  </main>
+    </</main>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -125,13 +125,8 @@
       return new Date(year, month - 1, day).toLocaleDateString();
     }
 
-    // Navigation actions
-    document.getElementById('newWorkout').addEventListener('click', () => {
-      window.location.href = 'log.html';
-    });
-    document.getElementById('backToList').addEventListener('click', () => {
-      window.location.href = 'workouts.html';
-    });
+    document.getElementById('newWorkout').addEventListener('click', () => window.location.href = 'log.html');
+    document.getElementById('backToList').addEventListener('click', () => window.location.href = 'workouts.html');
 
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
@@ -183,10 +178,7 @@
       const emptyMsg = document.getElementById('emptyMessage');
       listEl.innerHTML = '';
       emptyMsg.style.display = 'block';
-      if (error) {
-        emptyMsg.textContent = 'Failed to load workouts.';
-        return;
-      }
+      if (error) return void (emptyMsg.textContent = 'Failed to load workouts.');
       if (!data.length) {
         emptyMsg.textContent = selectedType ? 'No workouts of this type.' : 'No workouts yet.';
         return;
@@ -228,7 +220,6 @@
         return;
       }
       detailEmpty.style.display = 'none';
-
       entries.forEach(r => {
         const exercise = exercises.find(e => e.id === r.exercise_id);
         const name = exercise ? exercise.exercise_name : r.exercise_id;
