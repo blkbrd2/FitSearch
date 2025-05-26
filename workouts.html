@@ -34,6 +34,15 @@
       color: var(--color-text-muted);
       margin-top: var(--space-lg);
     }
+    .filter-row {
+      margin: var(--space-md) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .filter-row label {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -53,6 +62,14 @@
 
     <!-- List View -->
     <div id="listContainer">
+      <!-- Filter -->
+      <div class="filter-row">
+        <label for="typeFilter">Filter by type:</label>
+        <select id="typeFilter">
+          <option value="">All</option>
+        </select>
+      </div>
+
       <table class="workouts-table">
         <thead>
           <tr>
@@ -103,10 +120,8 @@
 
     // Utility to format date strings as local dates (avoiding timezone shift)
     function formatDate(dateStr) {
-      // Extract YYYY-MM-DD portion
       const [datePart] = dateStr.split('T');
       const [year, month, day] = datePart.split('-');
-      // Construct a local Date
       return new Date(year, month - 1, day).toLocaleDateString();
     }
 
@@ -128,6 +143,22 @@
       const { data: exData } = await supabase.from('exercises').select('id, exercise_name');
       exercises = exData || [];
 
+      // Populate type filter
+      const { data: types } = await supabase
+        .from('workouts')
+        .select('type', { distinct: true })
+        .eq('user_id', userId)
+        .order('type', { ascending: true });
+      const typeFilter = document.getElementById('typeFilter');
+      types.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.type;
+        opt.textContent = t.type.charAt(0).toUpperCase() + t.type.slice(1);
+        typeFilter.append(opt);
+      });
+
+      typeFilter.addEventListener('change', () => loadWorkoutList(userId));
+
       const params = new URLSearchParams(window.location.search);
       const viewId = params.get('view');
       if (viewId) {
@@ -140,20 +171,24 @@
     });
 
     async function loadWorkoutList(userId) {
-      const { data, error } = await supabase
+      const selectedType = document.getElementById('typeFilter').value;
+      let query = supabase
         .from('workouts')
         .select('id, date, type, notes, workout_entries(id)')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
+        .eq('user_id', userId);
+      if (selectedType) query = query.eq('type', selectedType);
+      const { data, error } = await query.order('date', { ascending: false });
+
       const listEl = document.getElementById('workoutList');
       const emptyMsg = document.getElementById('emptyMessage');
       listEl.innerHTML = '';
+      emptyMsg.style.display = 'block';
       if (error) {
         emptyMsg.textContent = 'Failed to load workouts.';
         return;
       }
       if (!data.length) {
-        emptyMsg.textContent = 'No workouts yet.';
+        emptyMsg.textContent = selectedType ? 'No workouts of this type.' : 'No workouts yet.';
         return;
       }
       emptyMsg.style.display = 'none';
