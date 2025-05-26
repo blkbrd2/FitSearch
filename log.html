@@ -211,8 +211,11 @@
           .from('workouts').update({ date, type, notes }).eq('id', editingWorkoutId);
         if (wErr) return showStatus('Failed to update workout.', 'var(--color-accent-alt)');
 
-        const { error: delErr } = await supabase
-          .from('workout_entries').delete().eq('workout_id', editingWorkoutId);
+        const { data: deletedEntries, error: delErr } = await supabase
+          .from('workout_entries')
+          .delete()
+          .match({ workout_id: editingWorkoutId });
+        if (delErr) return showStatus('Failed to clear old entries.', 'var(--color-accent-alt)');
         if (delErr) return showStatus('Failed to clear old entries.', 'var(--color-accent-alt)');
 
         const { error: eErr } = await supabase
