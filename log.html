@@ -16,22 +16,49 @@
     }
     .entry-row {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr auto;
-      gap: var(--space-sm);
+      grid-template-columns: 3fr 1fr 1fr 1fr auto;
+      gap: var(--space-xs);
       align-items: center;
       margin-bottom: var(--space-sm);
     }
-    .entry-row input,
-    .entry-row button.remove-entry {
-      font-size: var(--fz-base);
-    }
-    button.remove-entry {
-      background: transparent;
-      color: var(--color-accent-alt);
+    .remove-entry {
+      background: none;
       border: none;
+      color: var(--color-accent-alt);
       font-size: 1.25rem;
       cursor: pointer;
+      line-height: 1;
     }
+    .field label {
+      font-weight: bold;
+      margin-top: var(--space-md);
+      display: block;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: var(--space-sm);
+      margin-top: var(--space-xs);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
+    /* Entry-row inputs & selects match card styling */
+    .entry-row select,
+    .entry-row input {
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+      margin: 0;
+    }
+    /* Date picker full-width and vertically centered */
     .field input[type="date"] {
       width: 100%;
       padding: 0 var(--space-sm);
@@ -65,24 +92,27 @@
       <h2 style="margin-bottom: var(--space-md);">Log a New Workout</h2>
       <form id="logForm" style="display: flex; flex-direction: column; gap: var(--space-md);">
         <div class="field">
-          <label for="date">Date</label>
-          <input type="date" id="date" required />
-        </div>
-        <div class="field">
           <label for="type">Workout Type</label>
-          <select id="type" class="input" required>
+          <select id="type" required>
+            <option value="">— Select type —</option>
             <option value="push">Push</option>
             <option value="pull">Pull</option>
             <option value="legs">Legs</option>
             <option value="core">Core</option>
+            <option value="full body">Full Body</option>
+            <option value="cardio">Cardio</option>
+            <option value="rest">Rest</option>
           </select>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input type="date" id="date" required />
         </div>
         <div class="field">
           <label for="notes">Session Notes</label>
           <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
         </div>
 
-        <!-- Exercise entries inserted here -->
         <div id="entries"></div>
         <button type="button" class="secondary-btn" id="addEntry">+ Add Exercise</button>
         <button type="submit" class="primary-btn" id="saveWorkout">Save Workout</button>
@@ -142,14 +172,12 @@
         .from('workouts').select('date, type, notes').eq('id', id).single();
       if (wErr) return showStatus('Failed to load workout.', 'var(--color-accent-alt)');
 
-      document.getElementById('date').value = workout.date.split('T')[0];
       document.getElementById('type').value = workout.type;
+      document.getElementById('date').value = workout.date.split('T')[0];
       document.getElementById('notes').value = workout.notes || '';
 
       const { data: entries, error: eErr } = await supabase
-        .from('workout_entries')
-        .select('exercise_id, sets, reps, weight')
-        .eq('workout_id', id);
+        .from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id);
       if (eErr) return showStatus('Failed to load exercises.', 'var(--color-accent-alt)');
 
       const container = document.getElementById('entries'); container.innerHTML = '';
@@ -187,7 +215,8 @@
           .from('workout_entries').delete().eq('workout_id', editingWorkoutId);
         if (delErr) return showStatus('Failed to clear old entries.', 'var(--color-accent-alt)');
 
-        const { error: eErr } = await supabase.from('workout_entries')
+        const { error: eErr } = await supabase
+          .from('workout_entries')
           .insert(rows.map(r => ({ workout_id: editingWorkoutId, ...r })));
         if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
 
@@ -199,7 +228,8 @@
           .select('id').single();
         if (error) return showStatus('Failed to save workout.', 'var(--color-accent-alt)');
 
-        const { error: eErr } = await supabase.from('workout_entries')
+        const { error: eErr } = await supabase
+          .from('workout_entries')
           .insert(rows.map(r => ({ workout_id: w.id, ...r })));
         if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
 
@@ -217,11 +247,11 @@
       const container = document.getElementById('entries');
       const row = document.createElement('div'); row.className = 'entry-row';
       row.innerHTML = `
-        <input type="text" class="exercise_search" list="exerciseList" placeholder="— choose exercise —" required />
+        <input type="text" class="exercise_search input" list="exerciseList" placeholder="— choose exercise —" required />
         <input type="hidden" class="exercise_id" />
-        <input type="number" class="sets" placeholder="Sets" min="1" required />
-        <input type="number" class="reps" placeholder="Reps" min="1" required />
-        <input type="number" class="weight" placeholder="Weight" min="0" step="0.1" />
+        <input type="number" class="sets input" placeholder="Sets" min="1" required />
+        <input type="number" class="reps input" placeholder="Reps" min="1" required />
+        <input type="number" class="weight input" placeholder="Weight" min="0" step="0.1" />
         <button type="button" class="remove-entry">×</button>
       `;
       const search = row.querySelector('.exercise_search');
