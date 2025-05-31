@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeFit – Log Workout</title>
+  <title>FreeFit – Log Workout</n></title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
@@ -130,7 +130,6 @@
 
     let exercises = [];
     let userId = null;
-    let editingWorkoutId = null;
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -154,44 +153,8 @@
       document.getElementById('addEntry').addEventListener('click', addEntryRow);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
 
-      const params = new URLSearchParams(window.location.search);
-      const editId = params.get('edit');
-      if (editId) {
-        editingWorkoutId = editId;
-        document.getElementById('saveWorkout').textContent = 'Update Workout';
-        await loadWorkoutForEdit(editId);
-      } else {
-        addEntryRow();
-      }
-
+      addEntryRow();
       if (window.lucide) lucide.createIcons();
-    }
-
-    async function loadWorkoutForEdit(id) {
-      const { data: workout, error: wErr } = await supabase
-        .from('workouts').select('date, type, notes').eq('id', id).single();
-      if (wErr) return showStatus('Failed to load workout.', 'var(--color-accent-alt)');
-
-      document.getElementById('type').value = workout.type;
-      document.getElementById('date').value = workout.date.split('T')[0];
-      document.getElementById('notes').value = workout.notes || '';
-
-      const { data: entries, error: eErr } = await supabase
-        .from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id);
-      if (eErr) return showStatus('Failed to load exercises.', 'var(--color-accent-alt)');
-
-      const container = document.getElementById('entries'); container.innerHTML = '';
-      entries.forEach(entry => {
-        addEntryRow();
-        const rows = container.querySelectorAll('.entry-row');
-        const row = rows[rows.length - 1];
-        const ex = exercises.find(e => e.id === entry.exercise_id);
-        row.querySelector('.exercise_search').value = ex.exercise_name;
-        row.querySelector('.exercise_id').value    = entry.exercise_id;
-        row.querySelector('.sets').value           = entry.sets;
-        row.querySelector('.reps').value           = entry.reps;
-        row.querySelector('.weight').value         = entry.weight;
-      });
     }
 
     async function handleSubmit(e) {
@@ -206,38 +169,18 @@
         weight:  parseFloat(r.querySelector('.weight').value) || 0,
       }));
 
-      if (editingWorkoutId) {
-        const { error: wErr } = await supabase
-          .from('workouts').update({ date, type, notes }).eq('id', editingWorkoutId);
-        if (wErr) return showStatus('Failed to update workout.', 'var(--color-accent-alt)');
+      const { data: w, error } = await supabase
+        .from('workouts')
+        .insert({ user_id: userId, date, type, notes })
+        .select('id').single();
+      if (error) return showStatus('Failed to save workout.', 'var(--color-accent-alt)');
 
-        const { data: deletedEntries, error: delErr } = await supabase
-          .from('workout_entries')
-          .delete()
-          .match({ workout_id: editingWorkoutId });
-        if (delErr) return showStatus('Failed to clear old entries.', 'var(--color-accent-alt)');
-        if (delErr) return showStatus('Failed to clear old entries.', 'var(--color-accent-alt)');
+      const { error: eErr } = await supabase
+        .from('workout_entries')
+        .insert(rows.map(r => ({ workout_id: w.id, ...r })));
+      if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
 
-        const { error: eErr } = await supabase
-          .from('workout_entries')
-          .insert(rows.map(r => ({ workout_id: editingWorkoutId, ...r })));
-        if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
-
-        showStatus('Workout updated! 🎉', 'var(--color-accent)');
-      } else {
-        const { data: w, error } = await supabase
-          .from('workouts')
-          .insert({ user_id: userId, date, type, notes })
-          .select('id').single();
-        if (error) return showStatus('Failed to save workout.', 'var(--color-accent-alt)');
-
-        const { error: eErr } = await supabase
-          .from('workout_entries')
-          .insert(rows.map(r => ({ workout_id: w.id, ...r })));
-        if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
-
-        showStatus('Workout logged! 🎉', 'var(--color-accent)');
-      }
+      showStatus('Workout logged! 🎉', 'var(--color-accent)');
     }
 
     function showStatus(msg, color) {
