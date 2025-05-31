@@ -6,7 +6,6 @@
   <title>FreeFit – My Workouts</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
     /* Page-specific table styling using CSS variables */
@@ -20,7 +19,12 @@
       padding: var(--space-sm);
       border-bottom: 1px solid var(--color-border);
       text-align: left;
-      vertical-align: middle;
+    }
+    .workouts-table th {
+      background-color: var(--color-bg-light);
+      font-size: var(--fz-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .workouts-table tbody tr:hover {
       background-color: var(--color-bg-light);
@@ -50,14 +54,30 @@
       font-weight: bold;
       color: var(--color-text);
     }
-    /* Ensure View buttons align */
+    /* Edit button styling (salmon) */
+    .edit-btn {
+      background-color: var(--color-accent-alt);
+      color: var(--color-text);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-size: var(--fz-base);
+      font-weight: bold;
+      cursor: pointer;
+    }
+    /* Ensure buttons sit side-by-side */
     .workouts-table td:last-child {
       display: flex;
       align-items: center;
+      gap: var(--space-sm);
     }
     .workouts-table td button {
       display: inline-flex;
       align-items: center;
+    }
+    /* Fix button widths & remove bottom margin in table rows */
+    .workouts-table td .primary-btn,
+    .workouts-table td .edit-btn {
       width: auto;
       margin-bottom: 0;
     }
@@ -142,12 +162,8 @@
       return new Date(year, month - 1, day).toLocaleDateString();
     }
 
-    document.getElementById('newWorkout').addEventListener('click', () => {
-      window.location.href = 'log.html';
-    });
-    document.getElementById('backToList').addEventListener('click', () => {
-      window.location.href = 'workouts.html';
-    });
+    document.getElementById('newWorkout').addEventListener('click', () => window.location.href = 'log.html');
+    document.getElementById('backToList').addEventListener('click', () => window.location.href = 'workouts.html');
 
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
@@ -215,10 +231,16 @@
           <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
           <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
-          <td><button class="primary-btn" data-id="${w.id}">View</button></td>
+          <td>
+            <button class="primary-btn" data-id="${w.id}">View</button>
+            <button class="edit-btn" data-edit-id="${w.id}">Edit</button>
+          </td>
         `;
         tr.querySelector('button[data-id]').addEventListener('click', () => {
           window.location.href = `workouts.html?view=${w.id}`;
+        });
+        tr.querySelector('button[data-edit-id]').addEventListener('click', () => {
+          window.location.href = `log.html?edit=${w.id}`;
         });
         listEl.appendChild(tr);
       });
@@ -234,8 +256,7 @@
       ]);
 
       document.getElementById('detailDate').textContent = formatDate(workout.date);
-      document.getElementById('detailType').textContent =
-        workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
+      document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
       document.getElementById('detailNotes').textContent = workout.notes || '';
 
       const entriesEl = document.getElementById('entriesList');
@@ -245,7 +266,6 @@
         return;
       }
       detailEmpty.style.display = 'none';
-
       entries.forEach(r => {
         const exercise = exercises.find(e => e.id === r.exercise_id);
         const name = exercise ? exercise.exercise_name : r.exercise_id;
