@@ -6,6 +6,7 @@
   <title>FreeFit – My Workouts</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
     /* Page-specific table styling using CSS variables */
@@ -18,7 +19,14 @@
     .workouts-table td {
       padding: var(--space-sm);
       border-bottom: 1px solid var(--color-border);
+      border-right: 1px solid var(--color-border);
       text-align: left;
+      vertical-align: middle;
+    }
+    /* Remove right border on last column */
+    .workouts-table th:last-child,
+    .workouts-table td:last-child {
+      border-right: none;
     }
     .workouts-table th {
       background-color: var(--color-bg-light);
@@ -54,30 +62,14 @@
       font-weight: bold;
       color: var(--color-text);
     }
-    /* Edit button styling (salmon) */
-    .edit-btn {
-      background-color: var(--color-accent-alt);
-      color: var(--color-text);
-      border: none;
-      border-radius: var(--radius-md);
-      padding: var(--space-sm) var(--space-md);
-      font-size: var(--fz-base);
-      font-weight: bold;
-      cursor: pointer;
-    }
-    /* Ensure buttons sit side-by-side */
+    /* Ensure View buttons align */
     .workouts-table td:last-child {
       display: flex;
       align-items: center;
-      gap: var(--space-sm);
     }
     .workouts-table td button {
       display: inline-flex;
       align-items: center;
-    }
-    /* Fix button widths & remove bottom margin in table rows */
-    .workouts-table td .primary-btn,
-    .workouts-table td .edit-btn {
       width: auto;
       margin-bottom: 0;
     }
@@ -213,7 +205,7 @@
 
       const listEl = document.getElementById('workoutList');
       const emptyMsg = document.getElementById('emptyMessage');
-      listEl.innerHTML = '';
+      listEl.innerHTML = ''; 
       emptyMsg.style.display = 'block';
       if (error) {
         emptyMsg.textContent = 'Failed to load workouts.';
@@ -231,16 +223,10 @@
           <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
           <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
-          <td>
-            <button class="primary-btn" data-id="${w.id}">View</button>
-            <button class="edit-btn" data-edit-id="${w.id}">Edit</button>
-          </td>
+          <td><button class="primary-btn" data-id="${w.id}">View</button></td>
         `;
         tr.querySelector('button[data-id]').addEventListener('click', () => {
           window.location.href = `workouts.html?view=${w.id}`;
-        });
-        tr.querySelector('button[data-edit-id]').addEventListener('click', () => {
-          window.location.href = `log.html?edit=${w.id}`;
         });
         listEl.appendChild(tr);
       });
