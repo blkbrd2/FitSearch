@@ -6,6 +6,7 @@
   <title>FreeFit – My Workouts</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
     /* Page-specific table styling using CSS variables */
@@ -20,7 +21,133 @@
       border-bottom: 1px solid var(--color-border);
       text-align: left;
       vertical-align: middle;
-    } = await supabase.auth.getSession();
+    }
+    .workouts-table tbody tr:hover {
+      background-color: var(--color-bg-light);
+    }
+    .empty {
+      text-align: center;
+      color: var(--color-text-muted);
+      margin-top: var(--space-lg);
+    }
+    /* Styled filter dropdown to match global form controls */
+    .filter-row select {
+      background-color: var(--color-bg-light);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-size: var(--fz-base);
+      appearance: none;
+    }
+    .filter-row {
+      margin: var(--space-md) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .filter-row label {
+      font-weight: bold;
+      color: var(--color-text);
+    }
+    /* Ensure View buttons align */
+    .workouts-table td:last-child {
+      display: flex;
+      align-items: center;
+    }
+    .workouts-table td button {
+      display: inline-flex;
+      align-items: center;
+      width: auto;
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html" class="active"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="exercise_search.html"><i data-lucide="search"></i><span>Exercises</span></a>
+    <a href="log.html"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
+  </nav>
+
+  <main class="container">
+    <h2 style="color: var(--color-accent-alt); text-align: center; margin-top: 0;">My Workouts</h2>
+    <button class="primary-btn" id="newWorkout">+ New Workout</button>
+
+    <!-- List View -->
+    <div id="listContainer">
+      <!-- Filter -->
+      <div class="filter-row">
+        <label for="typeFilter">Filter by type:</label>
+        <select id="typeFilter">
+          <option value="">All</option>
+        </select>
+      </div>
+
+      <table class="workouts-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Notes</th>
+            <th>Exercises</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="workoutList"></tbody>
+      </table>
+      <div class="empty" id="emptyMessage">Loading workouts…</div>
+    </div>
+
+    <!-- Detail View -->
+    <div id="detailContainer" style="display: none;">
+      <button class="secondary-btn" id="backToList">← Back</button>
+      <h2 style="color: var(--color-accent-alt); text-align: center;">Workout Details</h2>
+      <div class="field"><strong>Date:</strong> <span id="detailDate"></span></div>
+      <div class="field"><strong>Type:</strong> <span id="detailType"></span></div>
+      <div class="field"><strong>Notes:</strong> <span id="detailNotes"></span></div>
+
+      <h3 style="margin-top: var(--space-md);">Exercises</h3>
+      <table class="workouts-table">
+        <thead>
+          <tr>
+            <th>Exercise</th>
+            <th>Sets</th>
+            <th>Reps</th>
+            <th>Weight</th>
+          </tr>
+        </thead>
+        <tbody id="entriesList"></tbody>
+      </table>
+      <div class="empty" id="emptyDetail">Loading...</div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase = createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+    );
+
+    let exercises = [];
+
+    function formatDate(dateStr) {
+      const [datePart] = dateStr.split('T');
+      const [year, month, day] = datePart.split('-');
+      return new Date(year, month - 1, day).toLocaleDateString();
+    }
+
+    document.getElementById('newWorkout').addEventListener('click', () => window.location.href = 'log.html');
+    document.getElementById('backToList').addEventListener('click', () => window.location.href = 'workouts.html');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       const userId = session.user.id;
 
@@ -91,41 +218,3 @@
         });
         listEl.appendChild(tr);
       });
-    }
-
-    async function showWorkoutDetail(id) {
-      const detailEmpty = document.getElementById('emptyDetail');
-      detailEmpty.textContent = 'Loading...';
-
-      const [{ data: workout }, { data: entries }] = await Promise.all([
-        supabase.from('workouts').select('date, type, notes').eq('id', id).single(),
-        supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
-      ]);
-
-      document.getElementById('detailDate').textContent = formatDate(workout.date);
-      document.getElementById('detailType').textContent = workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
-      document.getElementById('detailNotes').textContent = workout.notes || '';
-
-      const entriesEl = document.getElementById('entriesList');
-      entriesEl.innerHTML = '';
-      if (!entries.length) {
-        detailEmpty.textContent = 'No exercises recorded.';
-        return;
-      }
-      detailEmpty.style.display = 'none';
-      entries.forEach(r => {
-        const exercise = exercises.find(e => e.id === r.exercise_id);
-        const name = exercise ? exercise.exercise_name : r.exercise_id;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${name}</td>
-          <td>${r.sets}</td>
-          <td>${r.reps}</td>
-          <td>${r.weight}</td>
-        `;
-        entriesEl.appendChild(tr);
-      });
-    }
-  </script>
-</body>
-</html>
