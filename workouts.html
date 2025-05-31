@@ -54,30 +54,14 @@
       font-weight: bold;
       color: var(--color-text);
     }
-    /* Edit button styling (salmon) */
-    .edit-btn {
-      background-color: var(--color-accent-alt);
-      color: var(--color-text);
-      border: none;
-      border-radius: var(--radius-md);
-      padding: var(--space-sm) var(--space-md);
-      font-size: var(--fz-base);
-      font-weight: bold;
-      cursor: pointer;
-    }
-    /* Ensure buttons sit side-by-side */
+    /* Ensure View buttons align */
     .workouts-table td:last-child {
       display: flex;
       align-items: center;
-      gap: var(--space-sm);
     }
     .workouts-table td button {
       display: inline-flex;
       align-items: center;
-    }
-    /* Fix button widths & remove bottom margin in table rows */
-    .workouts-table td .primary-btn,
-    .workouts-table td .edit-btn {
       width: auto;
       margin-bottom: 0;
     }
@@ -231,16 +215,10 @@
           <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
           <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
-          <td>
-            <button class="primary-btn" data-id="${w.id}">View</button>
-            <button class="edit-btn" data-edit-id="${w.id}">Edit</button>
-          </td>
+          <td><button class="primary-btn" data-id="${w.id}">View</button></td>
         `;
         tr.querySelector('button[data-id]').addEventListener('click', () => {
           window.location.href = `workouts.html?view=${w.id}`;
-        });
-        tr.querySelector('button[data-edit-id]').addEventListener('click', () => {
-          window.location.href = `log.html?edit=${w.id}`;
         });
         listEl.appendChild(tr);
       });
