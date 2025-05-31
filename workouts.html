@@ -15,6 +15,12 @@
       border-collapse: collapse;
       margin-top: var(--space-md);
     }
+        /* Page-specific table styling using CSS variables */
+    .workouts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--space-md);
+    }
     .workouts-table th,
     .workouts-table td {
       padding: var(--space-sm);
@@ -55,25 +61,19 @@
     .filter-row label {
       font-weight: bold;
       color: var(--color-text);
-    }
-    /* Ensure View and Delete buttons align */
-    .workouts-table td:last-child {
-      display: flex;
-      align-items: center;
-      gap: var(--space-xs);
-    }
+    }    /* Ensure View button has inline-flex centering */
     .workouts-table td button {
       display: inline-flex;
       align-items: center;
       width: auto;
-      margin: 0;
-    }
-    .workouts-table td .delete-btn {
-      background: transparent;
-      color: var(--color-accent-alt);
-      border: none;
-      font-size: var(--fz-base);
-      cursor: pointer;
+      margin-bottom: 0;
+      /* center vertically within cell */
+      margin-top: 0.2rem;
+    }.workouts-table td button {
+      display: inline-flex;
+      align-items: center;
+      width: auto;
+      margin-bottom: 0;
     }
   </style>
 </head>
@@ -225,28 +225,10 @@
           <td>${w.type.charAt(0).toUpperCase() + w.type.slice(1)}</td>
           <td>${w.notes || ''}</td>
           <td>${w.workout_entries.length}</td>
-          <td>
-            <button class="primary-btn" data-id="${w.id}">View</button>
-            <button class="delete-btn" data-delete-id="${w.id}">×</button>
-          </td>
+          <td><button class="primary-btn" data-id="${w.id}">View</button></td>
         `;
         tr.querySelector('button[data-id]').addEventListener('click', () => {
           window.location.href = `workouts.html?view=${w.id}`;
-        });
-        // Add View click
-        tr.querySelector('button[data-id]').addEventListener('click', () => {
-          window.location.href = `workouts.html?view=${w.id}`;
-        });
-        // Add Delete click
-        tr.querySelector('button[data-delete-id]').addEventListener('click', async () => {
-          const confirmDelete = confirm('Are you sure you want to delete this workout?');
-          if (!confirmDelete) return;
-          const { error } = await supabase.from('workouts').delete().eq('id', w.id);
-          if (error) {
-            alert('Failed to delete workout.');
-            return;
-          }
-          loadWorkoutList(userId);
         });
         listEl.appendChild(tr);
       });
