@@ -61,12 +61,15 @@
     .filter-row label {
       font-weight: bold;
       color: var(--color-text);
-    }/* Ensure View buttons align */
-    .workouts-table td:last-child {
-      display: flex;
-      align-items: center;
-    }
+    }    /* Ensure View button has inline-flex centering */
     .workouts-table td button {
+      display: inline-flex;
+      align-items: center;
+      width: auto;
+      margin-bottom: 0;
+      /* center vertically within cell */
+      margin-top: 0.2rem;
+    }.workouts-table td button {
       display: inline-flex;
       align-items: center;
       width: auto;
