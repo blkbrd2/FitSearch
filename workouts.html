@@ -142,8 +142,12 @@
       return new Date(year, month - 1, day).toLocaleDateString();
     }
 
-    document.getElementById('newWorkout').addEventListener('click', () => window.location.href = 'log.html');
-    document.getElementById('backToList').addEventListener('click', () => window.location.href = 'workouts.html');
+    document.getElementById('newWorkout').addEventListener('click', () => {
+      window.location.href = 'log.html';
+    });
+    document.getElementById('backToList').addEventListener('click', () => {
+      window.location.href = 'workouts.html';
+    });
 
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
@@ -218,3 +222,43 @@
         });
         listEl.appendChild(tr);
       });
+    }
+
+    async function showWorkoutDetail(id) {
+      const detailEmpty = document.getElementById('emptyDetail');
+      detailEmpty.textContent = 'Loading...';
+
+      const [{ data: workout }, { data: entries }] = await Promise.all([
+        supabase.from('workouts').select('date, type, notes').eq('id', id).single(),
+        supabase.from('workout_entries').select('exercise_id, sets, reps, weight').eq('workout_id', id)
+      ]);
+
+      document.getElementById('detailDate').textContent = formatDate(workout.date);
+      document.getElementById('detailType').textContent =
+        workout.type.charAt(0).toUpperCase() + workout.type.slice(1);
+      document.getElementById('detailNotes').textContent = workout.notes || '';
+
+      const entriesEl = document.getElementById('entriesList');
+      entriesEl.innerHTML = '';
+      if (!entries.length) {
+        detailEmpty.textContent = 'No exercises recorded.';
+        return;
+      }
+      detailEmpty.style.display = 'none';
+
+      entries.forEach(r => {
+        const exercise = exercises.find(e => e.id === r.exercise_id);
+        const name = exercise ? exercise.exercise_name : r.exercise_id;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${r.sets}</td>
+          <td>${r.reps}</td>
+          <td>${r.weight}</td>
+        `;
+        entriesEl.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
