@@ -91,9 +91,90 @@
       workoutsData.forEach(w => { const t = w.type || 'Other'; typeCounts[t] = (typeCounts[t]||0)+1; });
       const typeLabels = Object.keys(typeCounts);
       const typeValues = typeLabels.map(l => typeCounts[l]);
+            // Retrieve theme colors
+      const rootStyles = getComputedStyle(document.documentElement);
+      const accent = rootStyles.getPropertyValue('--color-accent').trim();
+      const accentAlt = rootStyles.getPropertyValue('--color-accent-alt').trim();
+      const highlight = rootStyles.getPropertyValue('--color-highlight').trim();
+      
+      // 1) Workouts by Type (Bar Chart)
       new Chart(document.getElementById('workoutTypeChart'), {
-        type: 'bar', data: { labels: typeLabels.map(l=>l.charAt(0).toUpperCase()+l.slice(1)), datasets:[{ label:'Count', data:typeValues, backgroundColor: typeLabels.map(_=> 'var(--color-accent)') }] },
-        options: { responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, title:{ display:true, text:'Number of Workouts' } } } }
+        type: 'bar',
+        data: {
+          labels: typeLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{
+            label: 'Count',
+            data: typeValues,
+            backgroundColor: typeLabels.map(_ => accent)
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Number of Workouts' } }
+          }
+        }
+      });
+
+      // 2) Top Exercises (Bar Chart)
+      new Chart(document.getElementById('topExercisesChart'), {
+        type: 'bar',
+        data: {
+          labels: exLabels,
+          datasets: [{
+            label: 'Uses',
+            data: exValues,
+            backgroundColor: exLabels.map(_ => accentAlt)
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Count' } }
+          }
+        }
+      });
+
+      // 3) Muscle Group Distribution (Pie Chart)
+      new Chart(document.getElementById('muscleDistributionChart'), {
+        type: 'pie',
+        data: {
+          labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{
+            data: mgValues,
+            backgroundColor: mgLabels.map((_, i) => i % 2 === 0 ? accent : accentAlt)
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+
+      // 4) Workouts Over Time (Line Chart)
+      new Chart(document.getElementById('workoutsOverTimeChart'), {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Workouts',
+            data: monthVals,
+            borderColor: highlight,
+            backgroundColor: highlight,
+            fill: false,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { title: { display: true, text: 'Month' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Count' } }
+          }
+        }
       });
 
       // 2) Top Exercises (Bar Chart)
