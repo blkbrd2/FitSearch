@@ -24,6 +24,12 @@
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
       border: 1px solid #1e1e2f;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .metric-card.large {
+      height: 600px;
     }
     .metric-card h3 {
       margin-bottom: var(--space-md);
@@ -31,9 +37,10 @@
       font-size: var(--fz-md);
       text-align: center;
     }
-    canvas {
+    .metric-card canvas {
+      flex: 1;
       width: 100% !important;
-      height: auto !important;
+      height: 100% !important;
     }
   </style>
 </head>
@@ -62,8 +69,8 @@
         <h3>Top Exercises</h3>
         <canvas id="topExercisesChart"></canvas>
       </div>
-      <!-- Chart 3: Muscle Group Distribution (bar) -->
-      <div class="metric-card">
+      <!-- Chart 3: Muscle Group Distribution (horizontal bar) - larger -->
+      <div class="metric-card large">
         <h3>Muscle Group Distribution</h3>
         <canvas id="muscleDistributionChart"></canvas>
       </div>
@@ -89,12 +96,13 @@
       const palette = ['#ff6e61', '#f7c5a6', '#f2dfb1', '#b4d8b1', '#6b9cd1'];
 
       // Fetch data in parallel
-      const [{ data: workoutsData }, { data: entryData }, { data: entryMGData }, { data: datesData }] = await Promise.all([
+      const [{ data: workoutsData, error: wErr }, { data: entryData, error: eErr }, { data: entryMGData, error: mgErr }, { data: datesData, error: dErr }] = await Promise.all([
         supabase.from('workouts').select('type'),
         supabase.from('workout_entries').select('exercise_id, exercises(exercise_name)'),
         supabase.from('workout_entries').select('exercises(primary_muscle_group)'),
         supabase.from('workouts').select('created_at')
       ]);
+      if (wErr || eErr || mgErr || dErr) return console.error('Error loading metrics data');
 
       // Chart 1: Workouts by Type
       const typeCounts = {};
@@ -125,18 +133,19 @@
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
       });
 
-      // Chart 3: Muscle Group Distribution (Bar Chart)
+      // Chart 3: Muscle Group Distribution (horizontal, sorted)
       const mgCounts = {};
       entryMGData.forEach(r => {
         const mg = r.exercises.primary_muscle_group || 'Other';
         mgCounts[mg] = (mgCounts[mg]||0) + 1;
       });
-      const mgLabels = Object.keys(mgCounts);
-      const mgValues = mgLabels.map(l => mgCounts[l]);
+      const sortedMG = Object.entries(mgCounts).sort((a,b)=>b[1]-a[1]);
+      const mgLabels = sortedMG.map(([k]) => k.charAt(0).toUpperCase() + k.slice(1));
+      const mgValues = sortedMG.map(([,v]) => v);
       new Chart(document.getElementById('muscleDistributionChart'), {
         type: 'bar',
         data: {
-          labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          labels: mgLabels,
           datasets: [{ label: 'Count', data: mgValues, backgroundColor: palette.slice(0, mgLabels.length) }]
         },
         options: {
