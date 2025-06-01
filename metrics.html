@@ -6,9 +6,35 @@
   <title>FreeFit – Metrics</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Grid layout for 2x2 charts */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-lg);
+      margin-top: var(--space-lg);
+    }
+    .metric-card {
+      background: var(--color-bg);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-card h3 {
+      margin-bottom: var(--space-md);
+      color: var(--color-text);
+      font-size: var(--fz-md);
+      text-align: center;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -23,9 +49,28 @@
 
   <!-- Main Container -->
   <main class="container">
-    <div class="card" style="max-width: 800px; width: 100%;">
-      <h2 style="margin-bottom: var(--space-md);">Exercises by Muscle Group Over Time</h2>
-      <canvas id="muscleChart"></canvas>
+    <h2 style="margin-bottom: var(--space-md); text-align: center; color: var(--color-accent-alt);">Workout Metrics</h2>
+    <div class="metrics-grid">
+      <!-- Chart 1: Count of each workout type (bar) -->
+      <div class="metric-card">
+        <h3>Workouts by Type</h3>
+        <canvas id="workoutTypeChart"></canvas>
+      </div>
+      <!-- Chart 2: Workouts per Month (line) -->
+      <div class="metric-card">
+        <h3>Workouts Over Time</h3>
+        <canvas id="workoutsOverTimeChart"></canvas>
+      </div>
+      <!-- Chart 3: Type Distribution (pie) -->
+      <div class="metric-card">
+        <h3>Workout Type Distribution</h3>
+        <canvas id="typeDistributionChart"></canvas>
+      </div>
+      <!-- Chart 4: Exercises by Muscle Group Over Time (line) -->
+      <div class="metric-card">
+        <h3>Exercises by Muscle Group Over Time</h3>
+        <canvas id="muscleChart"></canvas>
+      </div>
     </div>
   </main>
 
@@ -39,53 +84,125 @@
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
 
-      // Fetch workout entries with muscle groups
-      const { data, error } = await supabase
+      // 1) Workouts by Type (Bar Chart)
+      const { data: workoutsData, error: wErr } = await supabase
+        .from('workouts')
+        .select('type');
+      if (wErr) {
+        console.error('Error loading workouts:', wErr);
+        return;
+      }
+      const typeCounts = {};
+      workoutsData.forEach(w => {
+        const t = w.type || 'Other';
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+      });
+      const typeLabels = Object.keys(typeCounts);
+      const typeValues = typeLabels.map(l => typeCounts[l]);
+      new Chart(document.getElementById('workoutTypeChart'), {
+        type: 'bar',
+        data: {
+          labels: typeLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{
+            label: 'Count',
+            data: typeValues,
+            backgroundColor: typeLabels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`)
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, title: { display: true, text: 'Number of Workouts' } } }
+        }
+      });
+
+      // 2) Workouts per Month (Line Chart)
+      const { data: workoutsDates, error: wdErr } = await supabase
+        .from('workouts')
+        .select('created_at');
+      if (wdErr) {
+        console.error('Error loading workout dates:', wdErr);
+        return;
+      }
+      const monthlyCounts = {};
+      workoutsDates.forEach(w => {
+        const date = new Date(w.created_at);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
+      });
+      const monthLabels = Object.keys(monthlyCounts).sort();
+      const monthValues = monthLabels.map(k => monthlyCounts[k]);
+      new Chart(document.getElementById('workoutsOverTimeChart'), {
+        type: 'line',
+        data: {
+          labels: monthLabels,
+          datasets: [{
+            label: 'Workouts',
+            data: monthValues,
+            borderColor: 'var(--color-accent)',
+            backgroundColor: 'var(--color-accent)',
+            fill: false,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { title: { display: true, text: 'Month' } }, y: { beginAtZero: true, title: { display: true, text: 'Workouts' } } }
+        }
+      });
+
+      // 3) Workout Type Distribution (Pie Chart)
+      new Chart(document.getElementById('typeDistributionChart'), {
+        type: 'pie',
+        data: {
+          labels: typeLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{
+            data: typeValues,
+            backgroundColor: typeLabels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`)
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // 4) Exercises by Muscle Group Over Time (Line Chart)
+      const { data: entriesData, error: eErr } = await supabase
         .from('workout_entries')
         .select(`
           created_at,
           exercises ( primary_muscle_group )
         `)
         .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error loading metrics:', error);
+      if (eErr) {
+        console.error('Error loading entries:', eErr);
         return;
       }
-
-      // Aggregate counts per month per muscle
-      const counts = {};
-      data.forEach(({ created_at, exercises: { primary_muscle_group } }) => {
+      const mgCounts = {};
+      entriesData.forEach(({ created_at, exercises: { primary_muscle_group } }) => {
         const date = new Date(created_at);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
-        const muscle = primary_muscle_group || 'Other';
-        counts[monthKey] = counts[monthKey] || {};
-        counts[monthKey][muscle] = (counts[monthKey][muscle] || 0) + 1;
+        const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+        const mg = primary_muscle_group || 'Other';
+        if (!mgCounts[key]) mgCounts[key] = {};
+        mgCounts[key][mg] = (mgCounts[key][mg] || 0) + 1;
       });
-
-      const labels = Object.keys(counts).sort();
-      const muscleGroups = [...new Set(data.map(r => r.exercises.primary_muscle_group))];
-      const colors = ['#4477ff', '#ff6b6b', '#ffb347', '#aaaaaa', '#2c2c3c'];
-      const datasets = muscleGroups.map((muscle, i) => ({
+      const mgLabels = Object.keys(mgCounts).sort();
+      const allMuscles = [...new Set(entriesData.map(r => r.exercises.primary_muscle_group))];
+      const mgColors = ['#4477ff', '#ff6b6b', '#ffb347', '#aaaaaa', '#2c2c3c'];
+      const mgDatasets = allMuscles.map((muscle, i) => ({
         label: muscle || 'Other',
-        data: labels.map(l => counts[l][muscle] || 0),
-        borderColor: colors[i % colors.length],
-        backgroundColor: colors[i % colors.length],
+        data: mgLabels.map(l => mgCounts[l][muscle] || 0),
+        borderColor: mgColors[i % mgColors.length],
+        backgroundColor: mgColors[i % mgColors.length],
         fill: false,
-        tension: 0.2
+        tension: 0.3
       }));
-
-      const ctx = document.getElementById('muscleChart').getContext('2d');
-      new Chart(ctx, {
+      new Chart(document.getElementById('muscleChart'), {
         type: 'line',
-        data: { labels, datasets },
+        data: { labels: mgLabels, datasets: mgDatasets },
         options: {
           responsive: true,
           plugins: { legend: { position: 'bottom' } },
-          scales: {
-            x: { title: { display: true, text: 'Month' } },
-            y: { title: { display: true, text: 'Exercises Performed' }, beginAtZero: true }
-          }
+          scales: { x: { title: { display: true, text: 'Month' } }, y: { beginAtZero: true, title: { display: true, text: 'Exercises' } } }
         }
       });
     });
