@@ -139,7 +139,15 @@
           labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
           datasets: [{ label: 'Count', data: mgValues, backgroundColor: palette.slice(0, mgLabels.length) }]
         },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Muscle Group' } }, y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: 'Muscle Group' } },
+            x: { beginAtZero: true, title: { display: true, text: 'Count' } }
+          }
+        }
       });
 
       // Chart 4: Workouts Over Time
