@@ -125,11 +125,25 @@
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
       });
 
-      // Chart 3: Muscle Group Distribution
-      const mgCounts = {};
-      entryMGData.forEach(r => {
-        const mg = r.exercises.primary_muscle_group || 'Other';
-        mgCounts[mg] = (mgCounts[mg]||0) + 1;
+            // Chart 3: Muscle Group Distribution (Bar Chart)
+      new Chart(document.getElementById('muscleDistributionChart'), {
+        type: 'bar',
+        data: {
+          labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{
+            label: 'Count',
+            data: mgValues,
+            backgroundColor: palette.slice(0, mgLabels.length)
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { title: { display: true, text: 'Muscle Group' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Count' } }
+          }
+        }
       });
       const mgLabels = Object.keys(mgCounts);
       const mgValues = mgLabels.map(l => mgCounts[l]);
