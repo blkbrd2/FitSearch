@@ -23,6 +23,7 @@
       padding: var(--space-md);
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-border);
     }
     .metric-card h3 {
       margin-bottom: var(--space-md);
@@ -84,11 +85,8 @@
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
 
-      // Retrieve theme colors
-      const rootStyles = getComputedStyle(document.documentElement);
-      const accent = rootStyles.getPropertyValue('--color-accent').trim();
-      const accentAlt = rootStyles.getPropertyValue('--color-accent-alt').trim();
-      const highlight = rootStyles.getPropertyValue('--color-highlight').trim();
+      // Color palette
+      const palette = ['#ff6e61', '#f7c5a6', '#f2dfb1', '#b4d8b1', '#6b9cd1'];
 
       // Fetch data in parallel
       const [{ data: workoutsData }, { data: entryData }, { data: entryMGData }, { data: datesData }] = await Promise.all([
@@ -107,7 +105,7 @@
         type: 'bar',
         data: {
           labels: typeLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
-          datasets: [{ label: 'Count', data: typeValues, backgroundColor: typeLabels.map(_ => accent) }]
+          datasets: [{ label: 'Count', data: typeValues, backgroundColor: palette.slice(0, typeLabels.length) }]
         },
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Number of Workouts' } } } }
       });
@@ -123,7 +121,7 @@
       const exValues = sortedExercises.map(e => e[1]);
       new Chart(document.getElementById('topExercisesChart'), {
         type: 'bar',
-        data: { labels: exLabels, datasets: [{ label: 'Uses', data: exValues, backgroundColor: exLabels.map(_ => accentAlt) }] },
+        data: { labels: exLabels, datasets: [{ label: 'Uses', data: exValues, backgroundColor: palette.slice(0, exLabels.length) }] },
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
       });
 
@@ -137,7 +135,7 @@
       const mgValues = mgLabels.map(l => mgCounts[l]);
       new Chart(document.getElementById('muscleDistributionChart'), {
         type: 'pie',
-        data: { labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)), datasets: [{ data: mgValues, backgroundColor: mgLabels.map((_,i) => i%2===0?accent:accentAlt) }] },
+        data: { labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)), datasets: [{ data: mgValues, backgroundColor: palette.slice(0, mgLabels.length) }] },
         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
       });
 
@@ -152,7 +150,7 @@
       const monthVals = months.map(m => monthlyCounts[m]);
       new Chart(document.getElementById('workoutsOverTimeChart'), {
         type: 'line',
-        data: { labels: months, datasets: [{ label: 'Workouts', data: monthVals, borderColor: highlight, backgroundColor: highlight, fill: false, tension: 0.3 }] },
+        data: { labels: months, datasets: [{ label: 'Workouts', data: monthVals, borderColor: palette[4], backgroundColor: palette[4], fill: false, tension: 0.3 }] },
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Month' } }, y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
       });
     });
