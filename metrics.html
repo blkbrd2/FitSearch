@@ -62,7 +62,7 @@
         <h3>Top Exercises</h3>
         <canvas id="topExercisesChart"></canvas>
       </div>
-      <!-- Chart 3: Muscle Group Distribution (pie) -->
+      <!-- Chart 3: Muscle Group Distribution (bar) -->
       <div class="metric-card">
         <h3>Muscle Group Distribution</h3>
         <canvas id="muscleDistributionChart"></canvas>
@@ -125,32 +125,21 @@
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
       });
 
-            // Chart 3: Muscle Group Distribution (Bar Chart)
-      new Chart(document.getElementById('muscleDistributionChart'), {
-        type: 'bar',
-        data: {
-          labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
-          datasets: [{
-            label: 'Count',
-            data: mgValues,
-            backgroundColor: palette.slice(0, mgLabels.length)
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { title: { display: true, text: 'Muscle Group' } },
-            y: { beginAtZero: true, title: { display: true, text: 'Count' } }
-          }
-        }
+      // Chart 3: Muscle Group Distribution (Bar Chart)
+      const mgCounts = {};
+      entryMGData.forEach(r => {
+        const mg = r.exercises.primary_muscle_group || 'Other';
+        mgCounts[mg] = (mgCounts[mg]||0) + 1;
       });
       const mgLabels = Object.keys(mgCounts);
       const mgValues = mgLabels.map(l => mgCounts[l]);
       new Chart(document.getElementById('muscleDistributionChart'), {
-        type: 'pie',
-        data: { labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)), datasets: [{ data: mgValues, backgroundColor: palette.slice(0, mgLabels.length) }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        type: 'bar',
+        data: {
+          labels: mgLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{ label: 'Count', data: mgValues, backgroundColor: palette.slice(0, mgLabels.length) }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Muscle Group' } }, y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
       });
 
       // Chart 4: Workouts Over Time
