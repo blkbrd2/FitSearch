@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeFit – Log Workout</n></title>
+  <title>FreeFit – Log Workout</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
@@ -46,7 +46,6 @@
       color: var(--color-text);
       font-size: var(--fz-base);
     }
-    /* Entry-row inputs & selects match card styling */
     .entry-row select,
     .entry-row input {
       width: 100%;
@@ -58,7 +57,6 @@
       font-size: var(--fz-base);
       margin: 0;
     }
-    /* Date picker full-width and vertically centered */
     .field input[type="date"] {
       width: 100%;
       padding: 0 var(--space-sm);
@@ -180,7 +178,13 @@
         .insert(rows.map(r => ({ workout_id: w.id, ...r })));
       if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
 
+      // Show success and reset form
       showStatus('Workout logged! 🎉', 'var(--color-accent)');
+      document.getElementById('logForm').reset();
+      const entriesContainer = document.getElementById('entries');
+      entriesContainer.innerHTML = '';
+      addEntryRow();
+      document.getElementById('date').valueAsDate = new Date();
     }
 
     function showStatus(msg, color) {
