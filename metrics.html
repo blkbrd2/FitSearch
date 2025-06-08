@@ -74,9 +74,9 @@
         <h3>Muscle Group Distribution</h3>
         <canvas id="muscleDistributionChart"></canvas>
       </div>
-      <!-- Chart 4: Workouts Over Time (line) -->
+      <!-- Chart 4: Total Sets Per Week (line) -->
       <div class="metric-card">
-        <h3>Workouts Over Time</h3>
+        <h3>Total Sets Per Week</h3>
         <canvas id="workoutsOverTimeChart"></canvas>
       </div>
     </div>
@@ -96,13 +96,18 @@
       const palette = ['#ff6e61', '#f7c5a6', '#f2dfb1', '#b4d8b1', '#6b9cd1'];
 
       // Fetch data in parallel
-      const [{ data: workoutsData, error: wErr }, { data: entryData, error: eErr }, { data: entryMGData, error: mgErr }, { data: datesData, error: dErr }] = await Promise.all([
+      const [
+        { data: workoutsData, error: wErr },
+        { data: entryData, error: eErr },
+        { data: entryMGData, error: mgErr },
+        { data: setsData, error: sErr }
+      ] = await Promise.all([
         supabase.from('workouts').select('type'),
         supabase.from('workout_entries').select('exercise_id, exercises(exercise_name)'),
         supabase.from('workout_entries').select('exercises(primary_muscle_group)'),
-        supabase.from('workouts').select('created_at')
+        supabase.from('workout_entries').select('sets, created_at')
       ]);
-      if (wErr || eErr || mgErr || dErr) return console.error('Error loading metrics data');
+      if (wErr || eErr || mgErr || sErr) return console.error('Error loading metrics data');
 
       // Chart 1: Workouts by Type
       const typeCounts = {};
@@ -159,19 +164,42 @@
         }
       });
 
-      // Chart 4: Workouts Over Time
-      const monthlyCounts = {};
-      datesData.forEach(w => {
-        const date = new Date(w.created_at);
-        const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}`;
-        monthlyCounts[key] = (monthlyCounts[key]||0) + 1;
+      // Chart 4: Total Sets Per Week
+      const weeklySets = {};
+      setsData.forEach(e => {
+        const date = new Date(e.created_at);
+        // ISO week number calculation
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        const key = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+        weeklySets[key] = (weeklySets[key] || 0) + e.sets;
       });
-      const months = Object.keys(monthlyCounts).sort();
-      const monthVals = months.map(m => monthlyCounts[m]);
+      const weekLabels = Object.keys(weeklySets).sort();
+      const weekValues = weekLabels.map(k => weeklySets[k]);
       new Chart(document.getElementById('workoutsOverTimeChart'), {
         type: 'line',
-        data: { labels: months, datasets: [{ label: 'Workouts', data: monthVals, borderColor: palette[4], backgroundColor: palette[4], fill: false, tension: 0.3 }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Month' } }, y: { beginAtZero: true, title: { display: true, text: 'Count' } } } }
+        data: {
+          labels: weekLabels,
+          datasets: [{
+            label: 'Total Sets',
+            data: weekValues,
+            borderColor: palette[4],
+            backgroundColor: palette[4],
+            fill: false,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { title: { display: true, text: 'Week' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Total Sets' } }
+          }
+        }
       });
     });
   </script>
