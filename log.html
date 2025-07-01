@@ -14,7 +14,255 @@
       width: 100%;
       padding: var(--space-sm);
       border: none;
+      border-radius: var(--radius-md);<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreeFit – Log Workout</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
+  <style>
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
       border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+      margin-bottom: var(--space-md);
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: var(--color-bg-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      width: 90%; max-width: 480px;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-close {
+      position: absolute;
+      top: var(--space-sm); right: var(--space-sm);
+      background: none; border: none;
+      font-size: 1.25rem; color: var(--color-text-muted);
+      cursor: pointer;
+    }
+    .modal h3 {
+      margin-bottom: var(--space-md);
+      color: var(--color-text);
+      font-size: var(--fz-lg);
+    }
+    .set-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .set-row .set-label {
+      width: 4rem;
+      font-weight: bold;
+      color: var(--color-text);
+    }
+    .set-row input {
+      flex: 1;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="exercise_search.html"><i data-lucide="search"></i><span>Exercises</span></a>
+    <a href="log.html" class="active"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
+  </nav>
+
+  <main class="container">
+    <div class="card" style="max-width:600px;">
+      <h2>Log a New Workout</h2>
+      <form id="logForm">
+        <div class="field">
+          <label for="type">Workout Type</label>
+          <select id="type" required>
+            <option value="">— Select type —</option>
+            <option value="push">Push</option>
+            <option value="pull">Pull</option>
+            <option value="legs">Legs</option>
+            <option value="core">Core</option>
+            <option value="full body">Full Body</option>
+            <option value="cardio">Cardio</option>
+            <option value="rest">Rest</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input type="date" id="date" required />
+        </div>
+        <div class="field">
+          <label for="notes">Session Notes</label>
+          <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
+        </div>
+
+        <div id="entries"></div>
+        <button type="button" class="secondary-btn" id="addExercise">+ Add Exercise</button>
+        <button type="submit" class="primary-btn">Save Workout</button>
+        <p id="status"></p>
+      </form>
+    </div>
+  </main>
+
+  <!-- Add Exercise Modal -->
+  <div class="modal-overlay" id="exerciseModal">
+    <div class="modal">
+      <button class="modal-close" id="closeModal">×</button>
+      <h3>Add Exercise</h3>
+      <div class="field">
+        <label for="modalExercise">Exercise</label>
+        <select id="modalExercise"></select>
+      </div>
+      <div id="setContainer"></div>
+      <button type="button" class="secondary-btn" id="addSet">+ Add Set</button>
+      <button type="button" class="primary-btn" id="saveExercise">Save</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase = createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'YOUR_ANON_KEY'
+    );
+    let exercises = [], userId = null;
+    const workoutEntries = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Auth check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return location.replace('login.html');
+      userId = session.user.id;
+
+      // Load exercises
+      const { data } = await supabase.from('exercises').select('id, exercise_name');
+      exercises = data || [];
+      const sel = document.getElementById('modalExercise');
+      exercises.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.exercise_name;
+        sel.appendChild(opt);
+      });
+
+      // Initialize form and modal handlers
+      document.getElementById('date').valueAsDate = new Date();
+      document.getElementById('addExercise').onclick = openModal;
+      document.getElementById('addSet').onclick = addSetRow;
+      document.getElementById('saveExercise').onclick = saveExercise;
+      document.getElementById('closeModal').onclick = () => document.getElementById('exerciseModal').style.display = 'none';
+
+      if (window.lucide) lucide.createIcons();
+    });
+
+    function openModal() {
+      document.getElementById('exerciseModal').style.display = 'flex';
+      document.getElementById('setContainer').innerHTML = '';
+      addSetRow();
+    }
+
+    function addSetRow() {
+      const count = document.querySelectorAll('.set-row').length + 1;
+      const row = document.createElement('div');
+      row.className = 'set-row';
+      row.innerHTML = `
+        <div class="set-label">Set ${count}</div>
+        <input type="number" placeholder="Weight" step="0.1" required />
+        <input type="number" placeholder="Reps" required />
+      `;
+      document.getElementById('setContainer').appendChild(row);
+    }
+
+    function saveExercise() {
+      const sel = document.getElementById('modalExercise');
+      const exerciseId = sel.value;
+      if (!exerciseId) return alert('Please select an exercise.');
+
+      const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
+        const [w, rp] = r.querySelectorAll('input');
+        return { weight: parseFloat(w.value), reps: parseInt(rp.value, 10) };
+      });
+
+      const entry = { exercise_id: exerciseId, set_count: sets.length };
+      sets.forEach((s, i) => {
+        entry[`weight_set${i+1}`] = s.weight;
+        entry[`reps_set${i+1}`] = s.reps;
+      });
+
+      workoutEntries.push(entry);
+      renderEntries();
+      document.getElementById('exerciseModal').style.display = 'none';
+    }
+
+    function renderEntries() {
+      const container = document.getElementById('entries');
+      container.innerHTML = '';
+      workoutEntries.forEach(en => {
+        const ex = exercises.find(e => e.id === en.exercise_id);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h4>${ex.exercise_name}</h4>` +
+          [...Array(en.set_count)].map((_, i) =>
+            `<div>Set ${i+1}: ${en[`weight_set${i+1}`]} lb × ${en[`reps_set${i+1}`]} reps</div>`
+          ).join('');
+        container.appendChild(card);
+      });
+    }
+
+    document.getElementById('logForm').onsubmit = async e => {
+      e.preventDefault();
+      const type = document.getElementById('type').value;
+      const date = document.getElementById('date').value;
+      const notes = document.getElementById('notes').value.trim();
+      const { data: workout, error } = await supabase
+        .from('workouts')
+        .insert({ user_id: userId, type, date, notes })
+        .select('id').single();
+      if (error) return alert('Workout save failed');
+
+      const { error: entryErr } = await supabase
+        .from('workout_entries')
+        .insert(workoutEntries.map(en => ({ workout_id: workout.id, ...en }))); 
+      if (entryErr) return alert('Entries save failed');
+
+      document.getElementById('logForm').reset();
+      document.getElementById('entries').innerHTML = '';
+      alert('Workout Logged 🎉');
+      document.getElementById('date').valueAsDate = new Date();
+    };
+  </script>
+</body>
+</html>
+
       background: var(--color-bg-light);
       color: var(--color-text);
       font-size: var(--fz-base);
