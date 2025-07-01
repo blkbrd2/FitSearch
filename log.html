@@ -8,6 +8,19 @@
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
+    /* Ensure textarea fields match other inputs */
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+      margin-bottom: var(--space-md);
+    }
     /* Modal Overlay */
     .modal-overlay {
       position: fixed;
@@ -44,41 +57,19 @@
       color: var(--color-text);
       font-size: var(--fz-lg);
     }
-    .field label {
-      font-weight: bold;
-      color: var(--color-text);
-      margin-bottom: var(--space-xs);
-      display: block;
-      font-size: var(--fz-sm);
-    }
-    .field input,
-    .field select {
-      width: 100%;
+    /* Style set inputs to match fields */
+    .set-row input {
+      flex: 1;
       padding: var(--space-sm);
       border: none;
       border-radius: var(--radius-md);
       background: var(--color-bg-light);
       color: var(--color-text);
       font-size: var(--fz-base);
-      margin-bottom: var(--space-md);
-    }
-    .set-row {
-      display: flex;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-sm);
-    }
-    .set-row input {
-      flex: 1;
-    }
-    .modal .secondary-btn,
-    .modal .primary-btn {
-      width: 100%;
-      margin-top: var(--space-sm);
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
   <nav>
     <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
     <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
@@ -112,7 +103,7 @@
         </div>
         <div class="field">
           <label for="notes">Session Notes</label>
-          <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
+          <textarea id="notes" rows="2" placeholder="How’d it go?" /></textarea>
         </div>
 
         <div id="entries"></div>
@@ -123,7 +114,6 @@
     </div>
   </main>
 
-  <!-- Add Exercise Modal -->
   <div class="modal-overlay" id="exerciseModal">
     <div class="modal">
       <button class="modal-close" id="closeModal">×</button>
@@ -131,20 +121,7 @@
       <div class="field">
         <label for="modalExercise">Exercise</label>
         <input id="modalExercise" list="exerciseList" placeholder="Search by name or description" />
-      </div>
-      <div class="field">
-        <label for="modalType">Movement Type</label>
-        <select id="modalType">
-          <option value="">All Movements</option>
-          <option>Push</option>
-          <option>Pull</option>
-          <option>Hold</option>
-          <option>Hinge</option>
-          <option>Squat</option>
-          <option>Lunge</option>
-          <option>Rotation</option>
-          <option>Multiple</option>
-        </select>
+        <input type="hidden" id="modalExerciseId" />
       </div>
       <div id="setContainer"></div>
       <button type="button" class="secondary-btn" id="addSet">+ Add Set</button>
@@ -186,10 +163,15 @@
       if (window.lucide) lucide.createIcons();
     });
 
+    document.getElementById('modalExercise').addEventListener('input', ({ target }) => {
+      const found = exercises.find(e => e.exercise_name === target.value);
+      document.getElementById('modalExerciseId').value = found ? found.id : '';
+    });
+
     function openModal() {
       document.getElementById('exerciseModal').style.display = 'flex';
       document.getElementById('modalExercise').value = '';
-      document.getElementById('modalType').value = '';
+      document.getElementById('modalExerciseId').value = '';
       document.getElementById('setContainer').innerHTML = '';
       addSetRow();
     }
@@ -209,16 +191,15 @@
     });
 
     function saveExercise() {
-      const name = document.getElementById('modalExercise').value;
-      const exercise = exercises.find(e => e.exercise_name === name);
-      if (!exercise) return alert('Exercise not found.');
+      const exerciseId = document.getElementById('modalExerciseId').value;
+      if (!exerciseId) return alert('Please select a valid exercise.');
 
       const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
         const [weight, reps] = r.querySelectorAll('input');
         return { weight: parseFloat(weight.value), reps: parseInt(reps.value, 10) };
       }).filter(s => !isNaN(s.weight) && !isNaN(s.reps));
 
-      const entry = { exercise_id: exercise.id, set_count: sets.length };
+      const entry = { exercise_id: exerciseId, set_count: sets.length };
       sets.forEach((s, i) => {
         entry[`weight_set${i + 1}`] = s.weight;
         entry[`reps_set${i + 1}`] = s.reps;
@@ -237,7 +218,9 @@
         div.className = 'card';
         div.innerHTML = `<h4>${ex.exercise_name}</h4>` +
           [...Array(entry.set_count)].map((_, i) => {
-            return `<div>Set ${i + 1}: ${entry[`weight_set${i + 1}`]} lb × ${entry[`reps_set${i + 1}`]} reps</div>`;
+            return `<div>Set ${i + 1}: ${entry[`weight_set${i + 1}`]} lb × ${
+              entry[`reps_set${i + 1}`]}
+              reps</div>`;
           }).join('');
         container.appendChild(div);
       });
