@@ -37,6 +37,7 @@
       width: 90%; max-width: 480px;
       position: relative;
       box-shadow: var(--shadow-lg);
+      overflow-x: hidden;
     }
     .modal-close {
       position: absolute;
@@ -57,6 +58,7 @@
       margin-bottom: var(--space-md);
     }
     .set-label {
+      flex-shrink: 0;
       width: 4rem;
       font-weight: bold;
       color: var(--color-text);
@@ -69,11 +71,11 @@
       background: var(--color-bg-light);
       color: var(--color-text);
       font-size: var(--fz-base);
+      min-width: 0;
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
   <nav>
     <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
     <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
@@ -117,7 +119,6 @@
     </div>
   </main>
 
-  <!-- Add Exercise Modal -->
   <div class="modal-overlay" id="exerciseModal">
     <div class="modal">
       <button class="modal-close" id="closeModal">×</button>
@@ -136,19 +137,20 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'YOUR_ANON_KEY'
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
     let exercises = [], userId = null;
     const workoutEntries = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Auth check
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return location.replace('login.html');
       userId = session.user.id;
 
-      // Load exercises dropdown
-      const { data } = await supabase.from('exercises').select('id, exercise_name');
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('id, exercise_name');
+      if (error) console.error('Error loading exercises:', error);
       exercises = data || [];
       const sel = document.getElementById('modalExercise');
       exercises.forEach(e => {
@@ -158,14 +160,11 @@
         sel.appendChild(opt);
       });
 
-      // Handlers
       document.getElementById('date').valueAsDate = new Date();
       document.getElementById('addExercise').onclick = openModal;
       document.getElementById('addSet').onclick = addSetRow;
       document.getElementById('saveExercise').onclick = saveExercise;
-      document.getElementById('closeModal').onclick = () => {
-        document.getElementById('exerciseModal').style.display = 'none';
-      };
+      document.getElementById('closeModal').onclick = () => document.getElementById('exerciseModal').style.display = 'none';
 
       if (window.lucide) lucide.createIcons();
     });
@@ -178,8 +177,7 @@
 
     function addSetRow() {
       const count = document.querySelectorAll('.set-row').length + 1;
-      const row = document.createElement('div');
-      row.className = 'set-row';
+      const row = document.createElement('div'); row.className = 'set-row';
       row.innerHTML =
         '<div class="set-label">Set ' + count + '</div>' +
         '<input type="number" placeholder="Weight" step="0.1" required />' +
@@ -218,9 +216,7 @@
         const ex = exercises.find(e => e.id === en.exercise_id);
         let html = '<div class="card"><h4>' + ex.exercise_name + '</h4>';
         for (let i = 0; i < en.set_count; i++) {
-          const w = en['weight_set' + (i+1)];
-          const r = en['reps_set' + (i+1)];
-          html += '<div>Set ' + (i+1) + ': ' + w + ' lb × ' + r + ' reps</div>';
+          html += '<div>Set ' + (i+1) + ': ' + en['weight_set' + (i+1)] + ' lb × ' + en['reps_set' + (i+1)] + ' reps</div>';
         }
         html += '</div>';
         container.innerHTML += html;
@@ -232,6 +228,7 @@
       const type = document.getElementById('type').value;
       const date = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
+
       const { data: workout, error } = await supabase
         .from('workouts')
         .insert({ user_id: userId, type, date, notes })
