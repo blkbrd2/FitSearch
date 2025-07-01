@@ -8,70 +8,25 @@
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
-    /* Page-specific styles */
-    #entries {
-      margin-top: var(--space-md);
-      border-top: 1px solid var(--color-border);
-      padding-top: var(--space-md);
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: flex; justify-content: center;
+      align-items: center; z-index: 1000; display: none;
     }
-    .entry-row {
-      display: grid;
-      grid-template-columns: 3fr 1fr 1fr 1fr auto;
-      gap: var(--space-xs);
-      align-items: center;
-      margin-bottom: var(--space-sm);
+    .modal {
+      background: var(--color-bg-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      width: 90%; max-width: 500px;
+      box-shadow: var(--shadow-lg);
     }
-    .remove-entry {
-      background: none;
-      border: none;
-      color: var(--color-accent-alt);
-      font-size: 1.25rem;
-      cursor: pointer;
-      line-height: 1;
-    }
-    .field label {
-      font-weight: bold;
-      margin-top: var(--space-md);
-      display: block;
-    }
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      padding: var(--space-sm);
-      margin-top: var(--space-xs);
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
-    }
-    .entry-row select,
-    .entry-row input {
-      width: 100%;
-      padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
-      margin: 0;
-    }
-    .field input[type="date"] {
-      width: 100%;
-      padding: 0 var(--space-sm);
-      height: 2.5rem;
-      line-height: 2.5rem;
-      margin-top: var(--space-xs);
-      background: var(--color-bg-light);
-      color: var(--color-text);
-      border: none;
-      border-radius: var(--radius-md);
-    }
+    .modal h3 { margin-bottom: var(--space-md); }
+    .set-row { display: flex; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+    .set-row input { flex: 1; }
+    .modal button { margin-top: var(--space-md); }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
   <nav>
     <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
     <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
@@ -81,14 +36,11 @@
     <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
   </nav>
 
-  <!-- Global datalist for searchable exercises -->
   <datalist id="exerciseList"></datalist>
-
-  <!-- Main Content -->
   <main class="container">
     <div class="card" style="max-width: 600px;">
-      <h2 style="margin-bottom: var(--space-md);">Log a New Workout</h2>
-      <form id="logForm" style="display: flex; flex-direction: column; gap: var(--space-md);">
+      <h2>Log a New Workout</h2>
+      <form id="logForm">
         <div class="field">
           <label for="type">Workout Type</label>
           <select id="type" required>
@@ -110,108 +62,135 @@
           <label for="notes">Session Notes</label>
           <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
         </div>
-
         <div id="entries"></div>
-        <button type="button" class="secondary-btn" id="addEntry">+ Add Exercise</button>
-        <button type="submit" class="primary-btn" id="saveWorkout">Save Workout</button>
+        <button type="button" class="secondary-btn" id="addExercise">+ Add Exercise</button>
+        <button type="submit" class="primary-btn">Save Workout</button>
         <p id="status"></p>
       </form>
     </div>
   </main>
 
+  <div class="modal-overlay" id="exerciseModal">
+    <div class="modal">
+      <h3>Add Exercise</h3>
+      <div class="field">
+        <label for="modalExercise">Exercise</label>
+        <input id="modalExercise" list="exerciseList" />
+      </div>
+      <div id="setContainer"></div>
+      <button type="button" class="secondary-btn" id="addSet">+ Add Set</button>
+      <button type="button" class="primary-btn" id="saveExercise">Save</button>
+    </div>
+  </div>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+      'ey...your_anon_key_here...'
     );
 
-    let exercises = [];
-    let userId = null;
+    let exercises = [], userId = null;
+    const workoutEntries = [];
 
-    document.addEventListener('DOMContentLoaded', init);
-
-    async function init() {
+    document.addEventListener('DOMContentLoaded', async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return window.location.replace('login.html');
+      if (!session) return location.replace('login.html');
       userId = session.user.id;
 
-      const { data: exData, error: exErr } = await supabase
-        .from('exercises').select('id, exercise_name');
-      if (!exErr) {
-        exercises = exData;
-        const dl = document.getElementById('exerciseList');
-        exercises.forEach(e => {
-          const opt = document.createElement('option'); opt.value = e.exercise_name;
-          dl.appendChild(opt);
-        });
-      }
+      const { data } = await supabase.from('exercises').select('id, exercise_name');
+      exercises = data || [];
+      const list = document.getElementById('exerciseList');
+      exercises.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.exercise_name;
+        list.appendChild(opt);
+      });
 
       document.getElementById('date').valueAsDate = new Date();
-      document.getElementById('addEntry').addEventListener('click', addEntryRow);
-      document.getElementById('logForm').addEventListener('submit', handleSubmit);
+      document.getElementById('addExercise').onclick = openModal;
+      document.getElementById('addSet').onclick = addSetRow;
+      document.getElementById('saveExercise').onclick = saveExercise;
+      document.getElementById('logForm').onsubmit = handleSubmit;
 
-      addEntryRow();
+      addSetRow();
       if (window.lucide) lucide.createIcons();
+    });
+
+    function openModal() {
+      document.getElementById('exerciseModal').style.display = 'flex';
+      document.getElementById('modalExercise').value = '';
+      document.getElementById('setContainer').innerHTML = '';
+      addSetRow();
+    }
+
+    function addSetRow() {
+      const row = document.createElement('div');
+      row.className = 'set-row';
+      row.innerHTML = `
+        <input type="number" placeholder="Weight" step="0.1" />
+        <input type="number" placeholder="Reps" />
+      `;
+      document.getElementById('setContainer').appendChild(row);
+    }
+
+    function saveExercise() {
+      const name = document.getElementById('modalExercise').value;
+      const exercise = exercises.find(e => e.exercise_name === name);
+      if (!exercise) return alert('Exercise not found.');
+
+      const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
+        const [weight, reps] = r.querySelectorAll('input');
+        return { weight: parseFloat(weight.value), reps: parseInt(reps.value, 10) };
+      }).filter(s => !isNaN(s.weight) && !isNaN(s.reps));
+
+      const entry = { exercise_id: exercise.id, set_count: sets.length };
+      sets.forEach((s, i) => {
+        entry[`weight_set${i + 1}`] = s.weight;
+        entry[`reps_set${i + 1}`] = s.reps;
+      });
+      workoutEntries.push(entry);
+      renderEntries();
+      document.getElementById('exerciseModal').style.display = 'none';
+    }
+
+    function renderEntries() {
+      const container = document.getElementById('entries');
+      container.innerHTML = '';
+      workoutEntries.forEach(entry => {
+        const ex = exercises.find(e => e.id === entry.exercise_id);
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<h4>${ex.exercise_name}</h4>` +
+          [...Array(entry.set_count)].map((_, i) => {
+            return `<div>Set ${i + 1}: ${entry[`weight_set${i + 1}`]} lb × ${entry[`reps_set${i + 1}`]} reps</div>`;
+          }).join('');
+        container.appendChild(div);
+      });
     }
 
     async function handleSubmit(e) {
       e.preventDefault();
-      const type  = document.getElementById('type').value;
-      const date  = document.getElementById('date').value;
+      const type = document.getElementById('type').value;
+      const date = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
-      const rows  = Array.from(document.querySelectorAll('.entry-row')).map(r => ({
-        exercise_id: r.querySelector('.exercise_id').value,
-        sets:    parseInt(r.querySelector('.sets').value, 10),
-        reps:    parseInt(r.querySelector('.reps').value, 10),
-        weight:  parseFloat(r.querySelector('.weight').value) || 0,
-      }));
 
-      const { data: w, error } = await supabase
+      const { data: workout, error } = await supabase
         .from('workouts')
-        .insert({ user_id: userId, date, type, notes })
-        .select('id').single();
-      if (error) return showStatus('Failed to save workout.', 'var(--color-accent-alt)');
+        .insert({ user_id: userId, type, date, notes })
+        .select('id')
+        .single();
 
-      const { error: eErr } = await supabase
-        .from('workout_entries')
-        .insert(rows.map(r => ({ workout_id: w.id, ...r })));
-      if (eErr) return showStatus('Failed to save exercises.', 'var(--color-accent-alt)');
+      if (error) return alert('Failed to save workout');
 
-      // Show success and reset form
-      showStatus('Workout logged! 🎉', 'var(--color-accent)');
+      const entriesToInsert = workoutEntries.map(entry => ({ workout_id: workout.id, ...entry }));
+      const { error: entryErr } = await supabase.from('workout_entries').insert(entriesToInsert);
+      if (entryErr) return alert('Failed to save entries');
+
       document.getElementById('logForm').reset();
-      const entriesContainer = document.getElementById('entries');
-      entriesContainer.innerHTML = '';
-      addEntryRow();
-      document.getElementById('date').valueAsDate = new Date();
-    }
-
-    function showStatus(msg, color) {
-      const st = document.getElementById('status');
-      st.textContent = msg;
-      st.style.color   = color;
-    }
-
-    function addEntryRow() {
-      const container = document.getElementById('entries');
-      const row = document.createElement('div'); row.className = 'entry-row';
-      row.innerHTML = `
-        <input type="text" class="exercise_search input" list="exerciseList" placeholder="— choose exercise —" required />
-        <input type="hidden" class="exercise_id" />
-        <input type="number" class="sets input" placeholder="Sets" min="1" required />
-        <input type="number" class="reps input" placeholder="Reps" min="1" required />
-        <input type="number" class="weight input" placeholder="Weight" min="0" step="0.1" />
-        <button type="button" class="remove-entry">×</button>
-      `;
-      const search = row.querySelector('.exercise_search');
-      const hidden = row.querySelector('.exercise_id');
-      search.addEventListener('change', () => {
-        const found = exercises.find(e => e.exercise_name === search.value);
-        hidden.value = found ? found.id : '';
-      });
-      row.querySelector('.remove-entry').addEventListener('click', () => row.remove());
-      container.appendChild(row);
+      document.getElementById('entries').innerHTML = '';
+      workoutEntries.length = 0;
+      alert('Workout Logged 🎉');
     }
   </script>
 </body>
