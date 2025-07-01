@@ -79,11 +79,48 @@
 </head>
 <body>
   <!-- Navbar -->
-  <nav> ... existing nav links ... </nav>
+  <nav>
+    <a href="landing.html"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="profile.html"><i data-lucide="user"></i><span>Profile</span></a>
+    <a href="workouts.html"><i data-lucide="dumbbell"></i><span>Workouts</span></a>
+    <a href="exercise_search.html"><i data-lucide="search"></i><span>Exercises</span></a>
+    <a href="log.html" class="active"><i data-lucide="pencil"></i><span>Log Entry</span></a>
+    <a href="metrics.html"><i data-lucide="bar-chart"></i><span>Metrics</span></a>
+  </nav>
 
   <datalist id="exerciseList"></datalist>
   <main class="container">
-    <!-- existing form markup unchanged -->
+    <div class="card" style="max-width: 600px;">
+      <h2>Log a New Workout</h2>
+      <form id="logForm">
+        <div class="field">
+          <label for="type">Workout Type</label>
+          <select id="type" required>
+            <option value="">— Select type —</option>
+            <option value="push">Push</option>
+            <option value="pull">Pull</option>
+            <option value="legs">Legs</option>
+            <option value="core">Core</option>
+            <option value="full body">Full Body</option>
+            <option value="cardio">Cardio</option>
+            <option value="rest">Rest</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input type="date" id="date" required />
+        </div>
+        <div class="field">
+          <label for="notes">Session Notes</label>
+          <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
+        </div>
+
+        <div id="entries"></div>
+        <button type="button" class="secondary-btn" id="addExercise">+ Add Exercise</button>
+        <button type="submit" class="primary-btn">Save Workout</button>
+        <p id="status"></p>
+      </form>
+    </div>
   </main>
 
   <!-- Add Exercise Modal -->
@@ -102,7 +139,11 @@
           <option>Push</option>
           <option>Pull</option>
           <option>Hold</option>
-          <!-- etc. -->
+          <option>Hinge</option>
+          <option>Squat</option>
+          <option>Lunge</option>
+          <option>Rotation</option>
+          <option>Multiple</option>
         </select>
       </div>
       <div id="setContainer"></div>
@@ -112,22 +153,46 @@
   </div>
 
   <script type="module">
-    // ... existing imports and init code ...
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase = createClient(
+      'https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'ey...your_anon_key_here...'
+    );
 
-    // Close Modal Handler
-    document.getElementById('closeModal').addEventListener('click', () => {
-      document.getElementById('exerciseModal').style.display = 'none';
+    let exercises = [], userId = null;
+    const workoutEntries = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return location.replace('login.html');
+      userId = session.user.id;
+
+      const { data } = await supabase.from('exercises').select('id, exercise_name');
+      exercises = data || [];
+      const list = document.getElementById('exerciseList');
+      exercises.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.exercise_name;
+        list.appendChild(opt);
+      });
+
+      document.getElementById('date').valueAsDate = new Date();
+      document.getElementById('addExercise').onclick = openModal;
+      document.getElementById('addSet').onclick = addSetRow;
+      document.getElementById('saveExercise').onclick = saveExercise;
+      document.getElementById('logForm').onsubmit = handleSubmit;
+
+      addSetRow();
+      if (window.lucide) lucide.createIcons();
     });
 
-    // Open Modal
-    document.getElementById('addExercise').onclick = () => {
+    function openModal() {
       document.getElementById('exerciseModal').style.display = 'flex';
-      // reset fields
       document.getElementById('modalExercise').value = '';
       document.getElementById('modalType').value = '';
       document.getElementById('setContainer').innerHTML = '';
       addSetRow();
-    };
+    }
 
     function addSetRow() {
       const row = document.createElement('div');
@@ -139,7 +204,68 @@
       document.getElementById('setContainer').appendChild(row);
     }
 
-    // ... rest of saveExercise, renderEntries, handleSubmit ...
+    document.getElementById('closeModal').addEventListener('click', () => {
+      document.getElementById('exerciseModal').style.display = 'none';
+    });
+
+    function saveExercise() {
+      const name = document.getElementById('modalExercise').value;
+      const exercise = exercises.find(e => e.exercise_name === name);
+      if (!exercise) return alert('Exercise not found.');
+
+      const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
+        const [weight, reps] = r.querySelectorAll('input');
+        return { weight: parseFloat(weight.value), reps: parseInt(reps.value, 10) };
+      }).filter(s => !isNaN(s.weight) && !isNaN(s.reps));
+
+      const entry = { exercise_id: exercise.id, set_count: sets.length };
+      sets.forEach((s, i) => {
+        entry[`weight_set${i + 1}`] = s.weight;
+        entry[`reps_set${i + 1}`] = s.reps;
+      });
+      workoutEntries.push(entry);
+      renderEntries();
+      document.getElementById('exerciseModal').style.display = 'none';
+    }
+
+    function renderEntries() {
+      const container = document.getElementById('entries');
+      container.innerHTML = '';
+      workoutEntries.forEach(entry => {
+        const ex = exercises.find(e => e.id === entry.exercise_id);
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<h4>${ex.exercise_name}</h4>` +
+          [...Array(entry.set_count)].map((_, i) => {
+            return `<div>Set ${i + 1}: ${entry[`weight_set${i + 1}`]} lb × ${entry[`reps_set${i + 1}`]} reps</div>`;
+          }).join('');
+        container.appendChild(div);
+      });
+    }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const type = document.getElementById('type').value;
+      const date = document.getElementById('date').value;
+      const notes = document.getElementById('notes').value.trim();
+
+      const { data: workout, error } = await supabase
+        .from('workouts')
+        .insert({ user_id: userId, type, date, notes })
+        .select('id')
+        .single();
+
+      if (error) return alert('Failed to save workout');
+
+      const entriesToInsert = workoutEntries.map(entry => ({ workout_id: workout.id, ...entry }));
+      const { error: entryErr } = await supabase.from('workout_entries').insert(entriesToInsert);
+      if (entryErr) return alert('Failed to save entries');
+
+      document.getElementById('logForm').reset();
+      document.getElementById('entries').innerHTML = '';
+      workoutEntries.length = 0;
+      alert('Workout Logged 🎉');
+    }
   </script>
 </body>
 </html>
