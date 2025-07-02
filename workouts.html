@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
-    /* Workouts table styling */
     .workouts-table {
       width: 100%;
       border-collapse: collapse;
@@ -29,34 +28,20 @@
     .workouts-table tbody tr:hover {
       background: var(--color-bg-light);
     }
-    .card-view,
     .detail-cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: var(--space-lg);
+      gap: var(--space-md);
       margin-top: var(--space-md);
     }
-    .workout-card,
     .exercise-card {
       background: var(--color-bg-mid);
       border-radius: var(--radius-lg);
-      padding: var(--space-lg);
+      padding: var(--space-md);
       box-shadow: var(--shadow-md);
     }
-    .workout-card h4,
-    .exercise-card h5 {
-      margin-bottom: var(--space-sm);
-      color: var(--color-text);
-    }
-    .meta {
-      font-size: var(--fz-sm);
-      color: var(--color-text-muted);
-      margin-bottom: var(--space-md);
-    }
-    .back-btn {
-      margin-top: var(--space-md);
-      display: inline-block;
-    }
+    .exercise-card h5 { margin-bottom: var(--space-xs); color: var(--color-text); }
+    .exercise-card .info { font-size: var(--fz-sm); color: var(--color-text-muted); }
   </style>
 </head>
 <body>
@@ -71,9 +56,11 @@
 
   <main class="container">
     <h2>My Workouts</h2>
-    <button class="primary-btn" id="newWorkout">+ New Workout</button>
-    <div class="field" style="margin-top: var(--space-md)">
-      <label for="filterType">Filter by type:</label>
+    <div class="field">
+      <a href="log.html" class="primary-btn">+ New Workout</a>
+    </div>
+    <div class="field">
+      <label for="filterType">Filter by type</label>
       <select id="filterType">
         <option value="all">All</option>
         <option value="push">Push</option>
@@ -101,7 +88,7 @@
     </table>
 
     <div id="detailView" style="display:none;">
-      <button class="secondary-btn back-btn" id="backToList">← Back to List</button>
+      <a href="#" class="secondary-btn" id="backToList">← Back to List</a>
       <h2>Workout Details</h2>
       <div class="meta" id="workoutSummary"></div>
       <div class="detail-cards" id="exerciseCards"></div>
@@ -123,7 +110,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadWorkouts();
       filterType.addEventListener('change', loadWorkouts);
-      document.getElementById('backToList').addEventListener('click', () => {
+      document.getElementById('backToList').addEventListener('click', e => {
+        e.preventDefault();
         detailView.style.display = 'none';
         workoutsTable.style.display = 'table';
       });
@@ -179,11 +167,10 @@
         `${entries.length} exercises · ${totalSets} sets · ${muscleCount} muscle groups`;
       const cards = document.getElementById('exerciseCards');
       cards.innerHTML = '';
-      entries.forEach((en, i) => {
+      entries.forEach(en => {
         const card = document.createElement('div');
         card.className = 'exercise-card';
-        const name = en.exercise.exercise_name;
-        let html = `<h5>${name}</h5><div class="meta">Sets: ${en.set_count}</div>`;
+        let html = `<h5>${en.exercise.exercise_name}</h5><div class="info">Sets: ${en.set_count}</div>`;
         for (let j = 1; j <= en.set_count; j++) {
           html += `<div>Set ${j}: ${en['weight_set'+j]} lb × ${en['reps_set'+j]} reps</div>`;
         }
