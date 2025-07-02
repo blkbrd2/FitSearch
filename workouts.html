@@ -6,6 +6,7 @@
   <title>FreeFit – My Workouts</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
     .workouts-table {
@@ -64,11 +65,11 @@
   <main class="container">
     <h2>My Workouts</h2>
     <div class="field">
-      <button type="button" class="primary-btn" id="newWorkout">+ New Workout</button>
+      <a href="log.html" class="primary-btn">+ New Workout</a>
     </div>
     <div class="field">
       <label for="filterType">Filter by type</label>
-      <select id="filterType" class="input">
+      <select id="filterType">
         <option value="all">All</option>
         <option value="push">Push</option>
         <option value="pull">Pull</option>
@@ -103,7 +104,7 @@
   </main>
 
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    import { createClient } from '@supabase/supabase-js';
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
@@ -115,11 +116,12 @@
     const filterType = document.getElementById('filterType');
 
     document.addEventListener('DOMContentLoaded', () => {
-      loadWorkouts();
-      filterType.addEventListener('change', loadWorkouts);
-      document.getElementById('newWorkout').addEventListener('click', () => {
+      // Navigate to log page on click
+      document.querySelector('.primary-btn').addEventListener('click', () => {
         window.location.href = 'log.html';
       });
+      loadWorkouts();
+      filterType.addEventListener('change', loadWorkouts);
       document.getElementById('backToList').addEventListener('click', () => {
         detailView.style.display = 'none';
         workoutsTable.style.display = 'table';
@@ -145,7 +147,6 @@
       if (type !== 'all') query = query.eq('type', type);
       const { data, error } = await query.order('date', { ascending: false });
       if (error) return console.error(error);
-
       renderList(data);
     }
 
@@ -154,7 +155,7 @@
       workouts.forEach(w => {
         const entries = w.workout_entries || [];
         const totalSets = entries.reduce((sum, e) => sum + (e.set_count || 0), 0);
-        const muscleCount = [...new Set(entries.map(e => e.exercise.primary_muscle_group))].length;
+        const muscleCount = new Set(entries.map(e => e.exercise.primary_muscle_group)).size;
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${new Date(w.date).toLocaleDateString()}</td>
