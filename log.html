@@ -11,67 +11,41 @@
     .field input,
     .field select,
     .field textarea {
-      width: 100%;
-      padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
+      width: 100%; padding: var(--space-sm);
+      border: none; border-radius: var(--radius-md);
       background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
+      color: var(--color-text); font-size: var(--fz-base);
       margin-bottom: var(--space-md);
     }
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
+    .modal-overlay { position: fixed; top:0; left:0;
+      width:100%; height:100%; background:rgba(0,0,0,0.7);
+      display:none; justify-content:center; align-items:center;
+      z-index:1000;
     }
-    .modal {
-      background: var(--color-bg-mid);
-      border-radius: var(--radius-lg);
-      padding: var(--space-lg);
-      width: 90%; max-width: 480px;
-      position: relative;
-      box-shadow: var(--shadow-lg);
-      overflow-x: hidden;
+    .modal { background:var(--color-bg-mid);
+      border-radius:var(--radius-lg); padding:var(--space-lg);
+      width:90%; max-width:480px; position:relative;
+      box-shadow:var(--shadow-lg); overflow-x:hidden;
     }
-    .modal-close {
-      position: absolute;
-      top: var(--space-sm); right: var(--space-sm);
-      background: none; border: none;
-      font-size: 1.25rem; color: var(--color-text-muted);
-      cursor: pointer;
+    .modal-close { position:absolute; top:var(--space-sm);
+      right:var(--space-sm); background:none; border:none;
+      font-size:1.25rem; color:var(--color-text-muted);
+      cursor:pointer;
     }
-    .modal h3 {
-      margin-bottom: var(--space-md);
-      color: var(--color-text);
-      font-size: var(--fz-lg);
+    .modal h3 { margin-bottom:var(--space-md);
+      color:var(--color-text); font-size:var(--fz-lg);
     }
-    .set-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-md);
+    .set-row { display:flex; align-items:center;
+      gap:var(--space-sm); margin-bottom:var(--space-md);
     }
-    .set-label {
-      flex-shrink: 0;
-      width: 4rem;
-      font-weight: bold;
-      color: var(--color-text);
+    .set-label { flex-shrink:0; width:4rem;
+      font-weight:bold; color:var(--color-text);
     }
-    .set-row input {
-      flex: 1;
-      padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
-      min-width: 0;
+    .set-row input { flex:1; padding:var(--space-sm);
+      border:none; border-radius:var(--radius-md);
+      background:var(--color-bg-light);
+      color:var(--color-text); font-size:var(--fz-base);
+      min-width:0;
     }
   </style>
 </head>
@@ -192,10 +166,7 @@
 
       const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
         const inputs = r.querySelectorAll('input');
-        return {
-          weight: parseFloat(inputs[0].value),
-          reps: parseInt(inputs[1].value, 10)
-        };
+        return { weight: parseFloat(inputs[0].value), reps: parseInt(inputs[1].value, 10) };
       });
 
       const entry = { exercise_id: exerciseId, set_count: sets.length };
@@ -237,7 +208,7 @@
 
       const { error: entryErr } = await supabase
         .from('workout_entries')
-        .insert(workoutEntries.map(en => ({ workout_id: workout.id, ...en }))); 
+        .insert(workoutEntries.map(en => ({ workout_id: workout.id, sets: en.set_count, ...en }))); 
       if (entryErr) return alert('Entries save failed');
 
       document.getElementById('logForm').reset();
