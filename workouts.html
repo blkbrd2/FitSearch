@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <title>FreeFit – My Workouts</title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/responsive.css">
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
   <style>
     .workouts-table {
@@ -40,8 +40,15 @@
       padding: var(--space-md);
       box-shadow: var(--shadow-md);
     }
-    .exercise-card h5 { margin-bottom: var(--space-xs); color: var(--color-text); }
-    .exercise-card .info { font-size: var(--fz-sm); color: var(--color-text-muted); }
+    .exercise-card h5 {
+      margin-bottom: var(--space-xs);
+      color: var(--color-text);
+    }
+    .exercise-card .info {
+      font-size: var(--fz-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-xs);
+    }
   </style>
 </head>
 <body>
@@ -57,11 +64,11 @@
   <main class="container">
     <h2>My Workouts</h2>
     <div class="field">
-      <a href="log.html" class="primary-btn">+ New Workout</a>
+      <button type="button" class="primary-btn" id="newWorkout">+ New Workout</button>
     </div>
     <div class="field">
       <label for="filterType">Filter by type</label>
-      <select id="filterType">
+      <select id="filterType" class="input">
         <option value="all">All</option>
         <option value="push">Push</option>
         <option value="pull">Pull</option>
@@ -88,7 +95,7 @@
     </table>
 
     <div id="detailView" style="display:none;">
-      <a href="#" class="secondary-btn" id="backToList">← Back to List</a>
+      <button type="button" class="secondary-btn" id="backToList">← Back to List</button>
       <h2>Workout Details</h2>
       <div class="meta" id="workoutSummary"></div>
       <div class="detail-cards" id="exerciseCards"></div>
@@ -110,8 +117,10 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadWorkouts();
       filterType.addEventListener('change', loadWorkouts);
-      document.getElementById('backToList').addEventListener('click', e => {
-        e.preventDefault();
+      document.getElementById('newWorkout').addEventListener('click', () => {
+        window.location.href = 'log.html';
+      });
+      document.getElementById('backToList').addEventListener('click', () => {
         detailView.style.display = 'none';
         workoutsTable.style.display = 'table';
       });
