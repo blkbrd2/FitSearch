@@ -7,73 +7,48 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
-  <!-- Choices.js for searchable dropdown -->
+  <!-- Choices.js for searchable select -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
   <style>
     .field input,
     .field select,
     .field textarea {
-      width: 100%;
-      padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
+      width: 100%; padding: var(--space-sm);
+      border: none; border-radius: var(--radius-md);
       background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
+      color: var(--color-text); font-size: var(--fz-base);
       margin-bottom: var(--space-md);
     }
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
+    .modal-overlay { position: fixed; top:0; left:0;
+      width:100%; height:100%; background:rgba(0,0,0,0.7);
+      display:none; justify-content:center; align-items:center;
+      z-index:1000;
     }
-    .modal {
-      background: var(--color-bg-mid);
-      border-radius: var(--radius-lg);
-      padding: var(--space-lg);
-      width: 90%; max-width: 480px;
-      position: relative;
-      box-shadow: var(--shadow-lg);
+    .modal { background:var(--color-bg-mid);
+      border-radius:var(--radius-lg); padding:var(--space-lg);
+      width:90%; max-width:480px; position:relative;
+      box-shadow:var(--shadow-lg); overflow-x:hidden;
     }
-    .modal-close {
-      position: absolute;
-      top: var(--space-sm); right: var(--space-sm);
-      background: none; border: none;
-      font-size: 1.25rem; color: var(--color-text-muted);
-      cursor: pointer;
+    .modal-close { position:absolute; top:var(--space-sm);
+      right:var(--space-sm); background:none; border:none;
+      font-size:1.25rem; color:var(--color-text-muted);
+      cursor:pointer;
     }
-    .modal h3 {
-      margin-bottom: var(--space-md);
-      color: var(--color-text);
-      font-size: var(--fz-lg);
+    .modal h3 { margin-bottom:var(--space-md);
+      color:var(--color-text); font-size:var(--fz-lg);
     }
-    .set-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-md);
+    .set-row { display:flex; align-items:center;
+      gap:var(--space-sm); margin-bottom:var(--space-md);
     }
-    .set-label {
-      flex-shrink: 0;
-      width: 4rem;
-      font-weight: bold;
-      color: var(--color-text);
+    .set-label { flex-shrink:0; width:4rem;
+      font-weight:bold; color:var(--color-text);
     }
-    .set-row input {
-      flex: 1;
-      padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
-      min-width: 0;
+    .set-row input { flex:1; padding:var(--space-sm);
+      border:none; border-radius:var(--radius-md);
+      background:var(--color-bg-light);
+      color:var(--color-text); font-size:var(--fz-base);
+      min-width:0;
     }
   </style>
 </head>
@@ -90,7 +65,7 @@
   <main class="container">
     <div class="card" style="max-width:600px;">
       <h2>Log a New Workout</h2>
-      <form id="logForm" style="display:flex; flex-direction:column; gap:var(--space-md);">
+      <form id="logForm">
         <div class="field">
           <label for="type">Workout Type</label>
           <select id="type" required>
@@ -136,16 +111,15 @@
   </div>
 
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'YOUR_ANON_KEY'
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
     );
-
     let exercises = [];
     let exerciseChoice;
-    const workoutEntries = [];
-    let userId;
+    let workoutEntries = [];
+    let userId = null;
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -160,13 +134,10 @@
 
       const sel = document.getElementById('modalExercise');
       exercises.forEach(e => {
-        const o = document.createElement('option');
-        o.value = e.id;
-        o.textContent = e.exercise_name;
-        sel.appendChild(o);
+        const opt = document.createElement('option'); opt.value = e.id; opt.textContent = e.exercise_name;
+        sel.appendChild(opt);
       });
 
-      // initialize searchable select
       exerciseChoice = new Choices(sel, {
         searchEnabled: true,
         itemSelectText: '',
@@ -188,7 +159,6 @@
       document.getElementById('closeModal').addEventListener('click', () => {
         document.getElementById('exerciseModal').style.display = 'none';
       });
-
       document.getElementById('addSet').addEventListener('click', addSetRow);
       document.getElementById('saveExercise').addEventListener('click', saveExercise);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
@@ -200,23 +170,21 @@
     function addSetRow() {
       const c = document.querySelectorAll('.set-row').length + 1;
       const row = document.createElement('div'); row.className = 'set-row';
-      row.innerHTML = `
-        <div class="set-label">Set ${c}</div>
+      row.innerHTML = `<div class="set-label">Set ${c}</div>
         <input type="number" placeholder="Weight" step="0.1" required />
-        <input type="number" placeholder="Reps" required />
-      `;
+        <input type="number" placeholder="Reps" required />`;
       document.getElementById('setContainer').appendChild(row);
     }
 
     function saveExercise() {
       const exerciseId = exerciseChoice.getValue(true);
-      if (!exerciseId) return alert('Please select an exercise');
+      if (!exerciseId) return alert('Select an exercise');
       const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
-        const [w,rp] = r.querySelectorAll('input');
-        return { weight: parseFloat(w.value), reps: parseInt(rp.value,10) };
+        const [w, rp] = r.querySelectorAll('input');
+        return { weight: parseFloat(w.value), reps: parseInt(rp.value, 10) };
       });
       const entry = { exercise_id: exerciseId, set_count: sets.length };
-      sets.forEach((s,i) => { entry[`weight_set${i+1}`] = s.weight; entry[`reps_set${i+1}`] = s.reps; });
+      sets.forEach((s, i) => { entry[`weight_set${i+1}`] = s.weight; entry[`reps_set${i+1}`] = s.reps; });
       workoutEntries.push(entry);
       renderEntries();
       document.getElementById('exerciseModal').style.display = 'none';
@@ -226,11 +194,10 @@
       const container = document.getElementById('entries'); container.innerHTML = '';
       workoutEntries.forEach(en => {
         const ex = exercises.find(x => x.id === en.exercise_id);
-        const card = document.createElement('div'); card.className = 'card';
-        let html = `<h4>${ex.exercise_name}</h4>`;
-        for (let i=1; i<=en.set_count; i++) html += `<div>Set ${i}: ${en[`weight_set${i}`]} lb × ${en[`reps_set${i}`]} reps</div>`;
-        card.innerHTML = html;
-        container.appendChild(card);
+        let html = `<div class="card"><h4>${ex.exercise_name}</h4>`;
+        for (let i=1;i<=en.set_count;i++) html += `<div>Set ${i}: ${en[`weight_set${i}`]} lb × ${en[`reps_set${i}`]} reps</div>`;
+        html += '</div>';
+        container.innerHTML += html;
       });
     }
 
@@ -243,7 +210,7 @@
         .insert({ user_id: userId, type, date, notes }).select('id').single();
       if (error) return alert('Workout save failed');
       const { error: e2 } = await supabase.from('workout_entries')
-        .insert(workoutEntries.map(en=>({ workout_id: w.id, ...en })));
+        .insert(workoutEntries.map(en=>({ workout_id:w.id, ...en })));
       if (e2) return alert('Entries save failed');
       document.getElementById('logForm').reset();
       document.getElementById('entries').innerHTML = '';
