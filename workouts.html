@@ -161,11 +161,7 @@
         // Build table row
         const row = document.createElement('tr');
         row.innerHTML = `
-           -  <td>${new Date(w.date).toLocaleDateString()}</td>
-+  <td>${
-+      new Date(w.date)
-+        .toLocaleDateString(undefined, { timeZone: 'UTC' })
-+    }</td>
+          <td>${new Date(w.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</td>
           <td>${w.type}</td>
           <td>${entries.length}</td>
           <td>${totalSets}</td>
