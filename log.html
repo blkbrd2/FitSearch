@@ -11,33 +11,76 @@
     .field input,
     .field select,
     .field textarea {
-      width: 100%; padding: var(--space-sm);
-      border: none; border-radius: var(--radius-md);
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
       background: var(--color-bg-light);
-      color: var(--color-text); font-size: var(--fz-base);
+      color: var(--color-text);
+      font-size: var(--fz-base);
       margin-bottom: var(--space-md);
     }
     .modal-overlay {
-      position: fixed; top:0; left:0;
-      width:100%; height:100%; background:rgba(0,0,0,0.7);
-      display:none; justify-content:center; align-items:center;
-      z-index:1000;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
     .modal {
-      background:var(--color-bg-mid); border-radius:var(--radius-lg);
-      padding:var(--space-lg); width:90%; max-width:480px;
-      position:relative; box-shadow:var(--shadow-lg);
+      background: var(--color-bg-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      width: 90%;
+      max-width: 480px;
+      position: relative;
+      box-shadow: var(--shadow-lg);
     }
     .modal-close {
-      position:absolute; top:var(--space-sm); right:var(--space-sm);
-      background:none; border:none; font-size:1.25rem;
-      color:var(--color-text-muted); cursor:pointer;
+      position: absolute;
+      top: var(--space-sm);
+      right: var(--space-sm);
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
     }
-    .modal h3 { margin-bottom:var(--space-md); color:var(--color-text); font-size:var(--fz-lg); }
-    .set-row { display:flex; gap:var(--space-sm); align-items:center; margin-bottom:var(--space-md); }
-    .set-label { flex-shrink:0; width:4rem; font-weight:bold; color:var(--color-text);}    
-    .set-row input { flex:1; padding:var(--space-sm); border:none; border-radius:var(--radius-md);
-      background:var(--color-bg-light); color:var(--color-text); font-size:var(--fz-base); }
+    .modal h3 { margin-bottom: var(--space-md); color: var(--color-text); font-size: var(--fz-lg); }
+
+    /* Updated layout for set rows */
+    .set-row {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr auto;
+      gap: var(--space-sm);
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+    .set-label {
+      font-weight: bold;
+      color: var(--color-text);
+    }
+    .set-row input {
+      width: 100%;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
+    .delete-set {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -83,7 +126,6 @@
     </div>
   </main>
 
-  <!-- Searchable datalist -->
   <datalist id="exerciseList"></datalist>
 
   <div class="modal-overlay" id="exerciseModal">
@@ -116,35 +158,28 @@
 
     async function init() {
       if (window.lucide) lucide.createIcons();
-
-      // Pre-bind modal and form buttons
       document.getElementById('addExercise').addEventListener('click', openModal);
       document.getElementById('closeModal').addEventListener('click', closeModal);
-      document.getElementById('addSet').addEventListener('click', addSetRow);
+      document.getElementById('addSet').addEventListener('click', () => { addSetRow(); updateSetLabels(); });
       document.getElementById('saveExercise').addEventListener('click', saveExercise);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
-
       document.getElementById('date').valueAsDate = new Date();
 
-      // Auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       userId = session.user.id;
 
-      // Load and sort exercises
       const { data, error } = await supabase.from('exercises').select('id, exercise_name');
       if (error) return console.error(error);
       exercises = data.sort((a,b) => a.exercise_name.localeCompare(b.exercise_name));
 
-      // Populate datalist
       const dl = document.getElementById('exerciseList');
       exercises.forEach(e => dl.appendChild(new Option(e.exercise_name)));
-
-      // Update hidden ID on search
-      document.getElementById('modalSearch').addEventListener('change', e => {
-        const found = exercises.find(x => x.exercise_name === e.target.value);
-        document.getElementById('modalId').value = found ? found.id : '';
-      });
+      document.getElementById('modalSearch')
+        .addEventListener('change', e => {
+          const found = exercises.find(x => x.exercise_name === e.target.value);
+          document.getElementById('modalId').value = found ? found.id : '';
+        });
     }
 
     function openModal() {
@@ -152,6 +187,7 @@
       document.getElementById('modalId').value = '';
       document.getElementById('setContainer').innerHTML = '';
       addSetRow();
+      closeAllDeleteButtons();
       document.getElementById('exerciseModal').style.display = 'flex';
     }
 
@@ -160,23 +196,46 @@
     }
 
     function addSetRow() {
-      const count = document.querySelectorAll('.set-row').length + 1;
+      const container = document.getElementById('setContainer');
+      const count = container.querySelectorAll('.set-row').length + 1;
       const row = document.createElement('div');
       row.className = 'set-row';
       row.innerHTML = `
         <div class="set-label">Set ${count}</div>
         <input type="number" placeholder="Weight" step="0.1" required />
         <input type="number" placeholder="Reps" required />
+        ${count > 1 ? '<button type="button" class="delete-set" title="Remove set">×</button>' : ''}
       `;
-      document.getElementById('setContainer').appendChild(row);
+      container.appendChild(row);
+      if (count > 1) {
+        row.querySelector('.delete-set').addEventListener('click', () => {
+          row.remove();
+          updateSetLabels();
+        });
+      }
+    }
+
+    function updateSetLabels() {
+      const rows = document.querySelectorAll('#setContainer .set-row');
+      rows.forEach((r, i) => {
+        r.querySelector('.set-label').textContent = `Set ${i+1}`;
+        const delBtn = r.querySelector('.delete-set');
+        if (i === 0 && delBtn) delBtn.remove();
+        if (i > 0 && !delBtn) {
+          const btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'delete-set'; btn.textContent = '×'; btn.title = 'Remove set';
+          btn.addEventListener('click', () => { r.remove(); updateSetLabels(); });
+          r.appendChild(btn);
+        }
+      });
     }
 
     function saveExercise() {
       const id = document.getElementById('modalId').value;
       if (!id) return alert('Please select an exercise from the list.');
       const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
-        const [w, rp] = r.querySelectorAll('input');
-        return { weight: parseFloat(w.value), reps: parseInt(rp.value, 10) };
+        const inputs = r.querySelectorAll('input');
+        return { weight: parseFloat(inputs[0].value), reps: parseInt(inputs[1].value, 10) };
       });
       const entry = { exercise_id: id, set_count: sets.length };
       sets.forEach((s, i) => {
