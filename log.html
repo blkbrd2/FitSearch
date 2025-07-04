@@ -34,10 +34,25 @@
       color:var(--color-text-muted); cursor:pointer;
     }
     .modal h3 { margin-bottom:var(--space-md); color:var(--color-text); font-size:var(--fz-lg); }
-    .set-row { display:flex; gap:var(--space-sm); align-items:center; margin-bottom:var(--space-md); }
+    .set-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+      width: 100%;
+      overflow: hidden;
+    }
     .set-label { flex-shrink:0; width:4rem; font-weight:bold; color:var(--color-text);}    
-    .set-row input { flex:1; padding:var(--space-sm); border:none; border-radius:var(--radius-md);
-      background:var(--color-bg-light); color:var(--color-text); font-size:var(--fz-base); }
+    .set-row input {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-light);
+      color: var(--color-text);
+      font-size: var(--fz-base);
+    }
   </style>
 </head>
 <body>
