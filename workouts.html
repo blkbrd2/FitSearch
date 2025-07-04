@@ -18,49 +18,34 @@
       background: var(--color-bg-light);
       color: var(--color-text);
       font-size: var(--fz-base);
-      margin-top: var(--space-xs);
     }
-    /* Table styling */
     .workouts-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: var(--space-md);
+      margin-top: var(--space-lg);
     }
     .workouts-table th,
     .workouts-table td {
       padding: var(--space-sm) var(--space-md);
-      border-bottom: 1px solid var(--color-border);
-      color: var(--color-text);
-    }
-    .workouts-table th {
-      text-transform: uppercase;
-      font-size: var(--fz-sm);
-      color: var(--color-text-muted);
       text-align: left;
     }
-    .workouts-table tbody tr:hover {
-      background: var(--color-bg-light);
-    }
-    .detail-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: var(--space-md);
-      margin-top: var(--space-md);
+    .workouts-table tr:nth-child(even) {
+      background: var(--color-bg-mid);
     }
     .exercise-card {
       background: var(--color-bg-mid);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       padding: var(--space-md);
-      box-shadow: var(--shadow-md);
+      margin-bottom: var(--space-md);
     }
     .exercise-card h5 {
-      margin-bottom: var(--space-xs);
+      margin: 0 0 var(--space-sm);
       color: var(--color-text);
     }
     .exercise-card .info {
-      font-size: var(--fz-sm);
+      font-size: 0.9rem;
+      margin-bottom: var(--space-sm);
       color: var(--color-text-muted);
-      margin-bottom: var(--space-xs);
     }
   </style>
 </head>
@@ -75,10 +60,8 @@
   </nav>
 
   <main class="container">
-    <h2>My Workouts</h2>
-    <div class="field">
-      <a href="log.html" class="primary-btn">+ New Workout</a>
-    </div>
+    <h1>My Workouts</h1>
+    <button class="primary-btn" id="newWorkout">+ New Workout</button>
     <div class="field">
       <label for="filterType">Filter by type</label>
       <select id="filterType">
@@ -92,8 +75,7 @@
         <option value="rest">Rest</option>
       </select>
     </div>
-
-    <table class="workouts-table" id="workoutsTable">
+    <table class="workouts-table">
       <thead>
         <tr>
           <th>Date</th>
@@ -104,47 +86,47 @@
           <th></th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="tableBody"></tbody>
     </table>
 
-    <div id="detailView" style="display:none;">
-      <button type="button" class="secondary-btn" id="backToList">← Back to List</button>
+    <button class="secondary-btn" id="backToList" style="display:none;">← Back to List</button>
+
+    <section id="detailView" style="display:none;">
       <h2>Workout Details</h2>
-      <div class="meta" id="workoutSummary"></div>
-      <div class="detail-cards" id="exerciseCards"></div>
-    </div>
+      <div class="detail-summary"></div>
+      <div id="detailCards"></div>
+    </section>
   </main>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+      'YOUR_SUPABASE_ANON_KEY'
     );
+    if (window.lucide) lucide.createIcons();
 
-    const tableBody = document.querySelector('#workoutsTable tbody');
-    const detailView = document.getElementById('detailView');
-    const workoutsTable = document.getElementById('workoutsTable');
+    const tableBody = document.getElementById('tableBody');
     const filterType = document.getElementById('filterType');
+    const newWorkout = document.getElementById('newWorkout');
+    const backToList = document.getElementById('backToList');
+    const detailView = document.getElementById('detailView');
+    const detailSummary = document.querySelector('.detail-summary');
+    const detailCards = document.getElementById('detailCards');
 
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) lucide.createIcons();
-      document.querySelector('.primary-btn').addEventListener('click', () => {
-        window.location.href = 'log.html';
-      });
-      filterType.addEventListener('change', loadWorkouts);
-      document.getElementById('backToList').addEventListener('click', () => {
-        detailView.style.display = 'none';
-        workoutsTable.style.display = 'table';
-      });
-      loadWorkouts();
+    filterType.addEventListener('change', loadWorkouts);
+    newWorkout.addEventListener('click', () => window.location.href = 'log.html');
+    backToList.addEventListener('click', () => {
+      detailView.style.display = 'none';
+      tableBody.closest('table').style.display = '';
+      backToList.style.display = 'none';
     });
 
     async function loadWorkouts() {
       const typeVal = filterType.value;
       let query = supabase
         .from('workouts')
-        .select(`id, date, type, workout_entries(set_count, exercise:exercise_id(exercise_name, primary_muscle_group))`)
+        .select(`id, date, type, workout_entries(*, exercise:exercise_id(exercise_name, primary_muscle_group))`)
         .order('date', { ascending: false });
       if (typeVal !== 'all') query = query.eq('type', typeVal);
       const { data, error } = await query;
@@ -158,7 +140,6 @@
         const entries = w.workout_entries || [];
         const totalSets = entries.reduce((sum, e) => sum + (e.set_count || 0), 0);
         const muscleCount = new Set(entries.map(e => e.exercise.primary_muscle_group)).size;
-        // Build table row
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${new Date(w.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</td>
@@ -166,21 +147,17 @@
           <td>${entries.length}</td>
           <td>${totalSets}</td>
           <td>${muscleCount}</td>
-          <td><button class="secondary-btn">View</button></td>
+          <td><button class="secondary-btn" data-id="${w.id}">Details</button></td>
         `;
-        row.querySelector('button').addEventListener('click', () => showDetail(w, entries, totalSets, muscleCount));
+        row.querySelector('button').addEventListener('click', () => showDetail(w));
         tableBody.appendChild(row);
       });
     }
 
-    function showDetail(workout, entries, totalSets, muscleCount) {
-      workoutsTable.style.display = 'none';
-      detailView.style.display = 'block';
-      document.getElementById('workoutSummary').textContent =
-        `${entries.length} exercises · ${totalSets} sets · ${muscleCount} muscle groups`;
-      const cards = document.getElementById('exerciseCards');
-      cards.innerHTML = '';
-      entries.forEach(en => {
+    function showDetail(workout) {
+      detailSummary.textContent = `${workout.workout_entries.length} exercises · ${workout.workout_entries.reduce((s, e) => s + e.set_count, 0)} sets · ${new Set(workout.workout_entries.map(e => e.exercise.primary_muscle_group)).size} muscle groups`;
+      detailCards.innerHTML = '';
+      workout.workout_entries.forEach(en => {
         const card = document.createElement('div');
         card.className = 'exercise-card';
         let html = `<h5>${en.exercise.exercise_name}</h5><div class="info">Sets: ${en.set_count}</div>`;
@@ -188,9 +165,15 @@
           html += `<div>Set ${j}: ${en['weight_set'+j]} lb × ${en['reps_set'+j]} reps</div>`;
         }
         card.innerHTML = html;
-        cards.appendChild(card);
+        detailCards.appendChild(card);
       });
+      tableBody.closest('table').style.display = 'none';
+      detailView.style.display = '';
+      backToList.style.display = '';
     }
+
+    // Initial load
+    loadWorkouts();
   </script>
 </body>
 </html>
