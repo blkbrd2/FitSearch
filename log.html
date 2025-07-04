@@ -7,9 +7,6 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
-  <!-- Choices.js for searchable select -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
   <style>
     .field input,
     .field select,
@@ -94,7 +91,7 @@
   <main class="container">
     <div class="card" style="max-width:600px;">
       <h2>Log a New Workout</h2>
-      <form id="logForm" style="display:flex; flex-direction:column; gap:var(--space-md);">
+      <form id="logForm" style="display:flex; flex-direction:column; gap:var(--space-md)">
         <div class="field">
           <label for="type">Workout Type</label>
           <select id="type" required>
@@ -116,7 +113,6 @@
           <label for="notes">Session Notes</label>
           <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
         </div>
-
         <div id="entries"></div>
         <button type="button" class="secondary-btn" id="addExercise">+ Add Exercise</button>
         <button type="submit" class="primary-btn">Save Workout</button>
@@ -125,13 +121,17 @@
     </div>
   </main>
 
+  <!-- Searchable datalist -->
+  <datalist id="exerciseList"></datalist>
+
   <div class="modal-overlay" id="exerciseModal">
     <div class="modal">
       <button class="modal-close" id="closeModal">×</button>
       <h3>Add Exercise</h3>
       <div class="field">
-        <label for="modalExercise">Exercise</label>
-        <select id="modalExercise"></select>
+        <label for="modalSearch">Exercise</label>
+        <input type="text" id="modalSearch" list="exerciseList" placeholder="Search exercise" />
+        <input type="hidden" id="modalId" />
       </div>
       <div id="setContainer"></div>
       <button type="button" class="secondary-btn" id="addSet">+ Add Set</button>
@@ -141,83 +141,74 @@
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-    const supabase = createClient(
-      'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'YOUR_ANON_KEY'
-    );
-    let exercises = [];
-    let workoutEntries = [];
-    let userId = null;
-    let modalChoice;
+    const supabase = createClient('https://mgskqqwxvnxyasuksxvp.supabase.co','YOUR_ANON_KEY');
+    let exercises = [], workoutEntries = [], userId=null;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Auth and exercise load
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return location.replace('login.html');
-      userId = session.user.id;
-      const { data, error } = await supabase.from('exercises').select('id, exercise_name');
-      if (error) return console.error(error);
-      // alphabetical
-      exercises = data.sort((a,b) => a.exercise_name.localeCompare(b.exercise_name));
-      // init modal select
-      const sel = document.getElementById('modalExercise');
-      exercises.forEach(e => sel.add(new Option(e.exercise_name, e.id)));
-      modalChoice = new Choices(sel, { searchEnabled:true, itemSelectText:'', placeholderValue:'Search exercise', shouldSort:false });
-      // bind
-      document.getElementById('addExercise').onclick = () => openModal();
+      if(window.lucide) lucide.createIcons();
+      const { data:{session} } = await supabase.auth.getSession();
+      if(!session) return location.replace('login.html');
+      userId=session.user.id;
+      const { data } = await supabase.from('exercises').select('id,exercise_name');
+      exercises = data.sort((a,b)=>a.exercise_name.localeCompare(b.exercise_name));
+      const dl=document.getElementById('exerciseList');
+      exercises.forEach(e=>dl.appendChild(new Option(e.exercise_name)));
+      document.getElementById('addExercise').onclick = openModal;
       document.getElementById('closeModal').onclick = () => closeModal();
-      document.getElementById('addSet').onclick = () => addSetRow();
-      document.getElementById('saveExercise').onclick = () => saveExercise();
-      document.getElementById('logForm').onsubmit = e => handleSubmit(e);
-      document.getElementById('date').valueAsDate = new Date();
-      if (window.lucide) lucide.createIcons();
+      document.getElementById('modalSearch').onchange = e=>{
+        const ex=exercises.find(x=>x.exercise_name===e.target.value);
+        document.getElementById('modalId').value=ex?ex.id:'';
+      };
+      document.getElementById('addSet').onclick=addSetRow;
+      document.getElementById('saveExercise').onclick=saveExercise;
+      document.getElementById('logForm').onsubmit=e=>handleSubmit(e);
+      document.getElementById('date').valueAsDate=new Date();
     });
-
-    function openModal() {
-      modalChoice.clearChoices();
-      modalChoice.setChoices(exercises.map(e=>({value:e.id,label:e.exercise_name})), 'value','label',true);
-      document.getElementById('setContainer').innerHTML = '';
+    function openModal(){
+      document.getElementById('modalSearch').value='';
+      document.getElementById('setContainer').innerHTML='';
       addSetRow();
-      document.getElementById('exerciseModal').style.display = 'flex';
+      document.getElementById('exerciseModal').style.display='flex';
     }
-    function closeModal() {
-      document.getElementById('exerciseModal').style.display = 'none';
-    }
-    function addSetRow() {
-      const count = document.querySelectorAll('.set-row').length + 1;
-      const row = document.createElement('div'); row.className='set-row';
-      row.innerHTML = `<div class="set-label">Set ${count}</div><input type="number" placeholder="Weight" step="0.1" required /><input type="number" placeholder="Reps" required />`;
+    function closeModal(){document.getElementById('exerciseModal').style.display='none';}
+    function addSetRow(){
+      const c=document.querySelectorAll('.set-row').length+1;
+      const row=document.createElement('div');row.className='set-row';
+      row.innerHTML=`<div class="set-label">Set ${c}</div><input type="number" placeholder="Weight" step="0.1" required/><input type="number" placeholder="Reps" required/>`;
       document.getElementById('setContainer').appendChild(row);
     }
-    function saveExercise() {
-      const selected = modalChoice.getValue(true);
-      if (!selected) return alert('Please pick an exercise');
-      const sets = Array.from(document.querySelectorAll('.set-row')).map(r=>{
-        const [w,rp] = r.querySelectorAll('input'); return {weight:parseFloat(w.value), reps:parseInt(rp.value,10)};
+    function saveExercise(){
+      const id=document.getElementById('modalId').value;
+      if(!id) return alert('Select an exercise');
+      const sets=Array.from(document.querySelectorAll('.set-row')).map(r=>{
+        const [w,rp]=r.querySelectorAll('input');return{weight:parseFloat(w.value),reps:parseInt(rp.value,10)};
       });
-      const entry = { exercise_id:selected, set_count:sets.length };
-      sets.forEach((s,i)=>{ entry[`weight_set${i+1}`]=s.weight; entry[`reps_set${i+1}`]=s.reps; });
+      const entry={exercise_id:id,set_count:sets.length};
+      sets.forEach((s,i)=>{entry[`weight_set${i+1}`]=s.weight;entry[`reps_set${i+1}`]=s.reps;});
       workoutEntries.push(entry);
-      renderEntries(); closeModal();
+      renderEntries();closeModal();
     }
-    function renderEntries() {
-      const container=document.getElementById('entries'); container.innerHTML='';
+    function renderEntries(){
+      const cont=document.getElementById('entries');cont.innerHTML='';
       workoutEntries.forEach(en=>{
         const ex=exercises.find(x=>x.id===en.exercise_id);
         const card=document.createElement('div');card.className='card';
-        card.innerHTML=`<h4>${ex.exercise_name}</h4>`+Array.from({length:en.set_count},(_,i)=>`<div>Set ${i+1}: ${en[`weight_set${i+1}`]} lb × ${en[`reps_set${i+1}`]} reps</div>`).join('');
-        container.appendChild(card);
+        card.innerHTML=`<h4>${ex.exercise_name}</h4>`+
+          Array.from({length:en.set_count},(_,i)=>`<div>Set ${i+1}: ${en[`weight_set${i+1}`]} lb × ${en[`reps_set${i+1}`]} reps</div>`).join('');
+        cont.appendChild(card);
       });
     }
-    async function handleSubmit(e) {
+    async function handleSubmit(e){
       e.preventDefault();
       const type=document.getElementById('type').value;
       const date=document.getElementById('date').value;
       const notes=document.getElementById('notes').value.trim();
-      const {data:w, error} = await supabase.from('workouts').insert({user_id:userId,type,date,notes}).select('id').single();
-      if(error) return alert('Workout save failed');
-      const {error:e2} = await supabase.from('workout_entries').insert(workoutEntries.map(en=>({workout_id:w.id,...en}))); if(e2) return alert('Entries save failed');
-      document.getElementById('logForm').reset(); document.getElementById('entries').innerHTML=''; document.getElementById('date').valueAsDate=new Date(); alert('Workout Logged 🎉');
+      const {data:w}=await supabase.from('workouts').insert({user_id:userId,type,date,notes}).select('id').single();
+      await supabase.from('workout_entries').insert(workoutEntries.map(en=>({workout_id:w.id,...en})));
+      document.getElementById('logForm').reset();
+      document.getElementById('entries').innerHTML='';
+      document.getElementById('date').valueAsDate=new Date();
+      alert('Workout Logged 🎉');
     }
   </script>
 </body>
