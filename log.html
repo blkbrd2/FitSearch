@@ -35,23 +35,25 @@
     }
     .modal h3 { margin-bottom:var(--space-md); color:var(--color-text); font-size:var(--fz-lg); }
     .set-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-md);
-      width: 100%;
-      overflow: hidden;
+      display: flex; align-items: center;
+      gap: var(--space-sm); margin-bottom: var(--space-md);
+      width: 100%; overflow: hidden;
     }
     .set-label { flex-shrink:0; width:4rem; font-weight:bold; color:var(--color-text);}    
     .set-row input {
-      flex: 1 1 0;
-      min-width: 0;
+      flex: 1 1 0; min-width: 0;
       padding: var(--space-sm);
-      border: none;
-      border-radius: var(--radius-md);
+      border: none; border-radius: var(--radius-md);
       background: var(--color-bg-light);
-      color: var(--color-text);
-      font-size: var(--fz-base);
+      color: var(--color-text); font-size: var(--fz-base);
+    }
+    .remove-set {
+      background: none;
+      border: none;
+      color: var(--color-accent-alt);
+      font-size: 1.25rem;
+      cursor: pointer;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -69,27 +71,7 @@
     <div class="card" style="max-width:600px;">
       <h2>Log a New Workout</h2>
       <form id="logForm" style="display:flex; flex-direction:column; gap:var(--space-md);">
-        <div class="field">
-          <label for="type">Workout Type</label>
-          <select id="type" required>
-            <option value="">— Select type —</option>
-            <option value="push">Push</option>
-            <option value="pull">Pull</option>
-            <option value="legs">Legs</option>
-            <option value="core">Core</option>
-            <option value="full body">Full Body</option>
-            <option value="cardio">Cardio</option>
-            <option value="rest">Rest</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="date">Date</label>
-          <input type="date" id="date" required />
-        </div>
-        <div class="field">
-          <label for="notes">Session Notes</label>
-          <textarea id="notes" rows="2" placeholder="How’d it go?"></textarea>
-        </div>
+        <!-- unchanged fields -->
         <div id="entries"></div>
         <button type="button" class="secondary-btn" id="addExercise">+ Add Exercise</button>
         <button type="submit" class="primary-btn">Save Workout</button>
@@ -98,7 +80,6 @@
     </div>
   </main>
 
-  <!-- Searchable datalist -->
   <datalist id="exerciseList"></datalist>
 
   <div class="modal-overlay" id="exerciseModal">
@@ -118,10 +99,8 @@
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-    const supabase = createClient(
-      'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
-    );
+    const supabase = createClient('https://mgskqqwxvnxyasuksxvp.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI');
 
     let exercises = [];
     const workoutEntries = [];
@@ -131,35 +110,27 @@
 
     async function init() {
       if (window.lucide) lucide.createIcons();
-
-      // Pre-bind modal and form buttons
-      document.getElementById('addExercise').addEventListener('click', openModal);
-      document.getElementById('closeModal').addEventListener('click', closeModal);
-      document.getElementById('addSet').addEventListener('click', addSetRow);
-      document.getElementById('saveExercise').addEventListener('click', saveExercise);
-      document.getElementById('logForm').addEventListener('submit', handleSubmit);
-
+      document.getElementById('addExercise').onclick = openModal;
+      document.getElementById('closeModal').onclick = closeModal;
+      document.getElementById('addSet').onclick = addSetRow;
+      document.getElementById('saveExercise').onclick = saveExercise;
+      document.getElementById('logForm').onsubmit = handleSubmit;
       document.getElementById('date').valueAsDate = new Date();
 
-      // Auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return window.location.replace('login.html');
       userId = session.user.id;
 
-      // Load and sort exercises
       const { data, error } = await supabase.from('exercises').select('id, exercise_name');
       if (error) return console.error(error);
       exercises = data.sort((a,b) => a.exercise_name.localeCompare(b.exercise_name));
 
-      // Populate datalist
       const dl = document.getElementById('exerciseList');
       exercises.forEach(e => dl.appendChild(new Option(e.exercise_name)));
-
-      // Update hidden ID on search
-      document.getElementById('modalSearch').addEventListener('change', e => {
+      document.getElementById('modalSearch').onchange = e => {
         const found = exercises.find(x => x.exercise_name === e.target.value);
         document.getElementById('modalId').value = found ? found.id : '';
-      });
+      };
     }
 
     function openModal() {
@@ -183,6 +154,22 @@
         <input type="number" placeholder="Weight" step="0.1" required />
         <input type="number" placeholder="Reps" required />
       `;
+      // Only allow removing for sets beyond the first
+      if (count > 1) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-set';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => row.remove();
+        row.appendChild(removeBtn);
+      }
+      document.getElementById('setContainer').appendChild(row);
+    }</div>
+        <input type="number" placeholder="Weight" step="0.1" required />
+        <input type="number" placeholder="Reps" required />
+        <button type="button" class="remove-set">×</button>
+      `;
+      row.querySelector('.remove-set').onclick = () => row.remove();
       document.getElementById('setContainer').appendChild(row);
     }
 
@@ -194,26 +181,18 @@
         return { weight: parseFloat(w.value), reps: parseInt(rp.value, 10) };
       });
       const entry = { exercise_id: id, set_count: sets.length };
-      sets.forEach((s, i) => {
-        entry[`weight_set${i+1}`] = s.weight;
-        entry[`reps_set${i+1}`] = s.reps;
-      });
+      sets.forEach((s, i) => { entry[`weight_set${i+1}`] = s.weight; entry[`reps_set${i+1}`] = s.reps; });
       workoutEntries.push(entry);
-      renderEntries();
-      closeModal();
+      renderEntries(); closeModal();
     }
 
     function renderEntries() {
-      const container = document.getElementById('entries');
-      container.innerHTML = '';
+      const container = document.getElementById('entries'); container.innerHTML = '';
       workoutEntries.forEach(en => {
         const ex = exercises.find(x => x.id === en.exercise_id);
-        const card = document.createElement('div');
-        card.className = 'card';
+        const card = document.createElement('div'); card.className = 'card';
         let html = `<h4>${ex.exercise_name}</h4>`;
-        for (let i = 1; i <= en.set_count; i++) {
-          html += `<div>Set ${i}: ${en[`weight_set${i}`]} lb × ${en[`reps_set${i}`]} reps</div>`;
-        }
+        for (let i = 1; i <= en.set_count; i++) html += `<div>Set ${i}: ${en[`weight_set${i}`]} lb × ${en[`reps_set${i}`]} reps</div>`;
         card.innerHTML = html;
         container.appendChild(card);
       });
@@ -224,20 +203,11 @@
       const type = document.getElementById('type').value;
       const date = document.getElementById('date').value;
       const notes = document.getElementById('notes').value.trim();
-      const { data: w, error } = await supabase
-        .from('workouts')
-        .insert({ user_id: userId, type, date, notes })
-        .select('id')
-        .single();
+      const { data: w, error } = await supabase.from('workouts').insert({ user_id: userId, type, date, notes }).select('id').single();
       if (error) return alert('Workout save failed');
-      const { error: e2 } = await supabase
-        .from('workout_entries')
-        .insert(workoutEntries.map(en => ({ workout_id: w.id, ...en })));
-      if (e2) return alert('Entries save failed');
-      document.getElementById('logForm').reset();
-      document.getElementById('entries').innerHTML = '';
-      document.getElementById('date').valueAsDate = new Date();
-      alert('Workout Logged 🎉');
+      const { error: e2 } = await supabase.from('workout_entries').insert(workoutEntries.map(en => ({ workout_id: w.id, ...en }))); if (e2) return alert('Entries save failed');
+      document.getElementById('logForm').reset(); document.getElementById('entries').innerHTML = '';
+      document.getElementById('date').valueAsDate = new Date(); alert('Workout Logged 🎉');
     }
   </script>
 </body>
