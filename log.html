@@ -187,7 +187,6 @@
       document.getElementById('modalId').value = '';
       document.getElementById('setContainer').innerHTML = '';
       addSetRow();
-      closeAllDeleteButtons();
       document.getElementById('exerciseModal').style.display = 'flex';
     }
 
@@ -201,10 +200,10 @@
       const row = document.createElement('div');
       row.className = 'set-row';
       row.innerHTML = `
-        <div class="set-label">Set ${count}</div>
-        <input type="number" placeholder="Weight" step="0.1" required />
-        <input type="number" placeholder="Reps" required />
-        ${count > 1 ? '<button type="button" class="delete-set" title="Remove set">×</button>' : ''}
+        <div class=\"set-label\">Set ${count}</div>
+        <input type=\"number\" placeholder=\"Weight\" step=\"0.1\" required />
+        <input type=\"number\" placeholder=\"Reps\" required />
+        ${count > 1 ? '<button type=\"button\" class=\"delete-set\" title=\"Remove set\">×</button>' : ''}
       `;
       container.appendChild(row);
       if (count > 1) {
