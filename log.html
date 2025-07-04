@@ -7,9 +7,6 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.264.0/dist/umd/lucide.min.js"></script>
-  <!-- Choices.js for searchable select -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
   <style>
     .field input,
     .field select,
@@ -96,13 +93,17 @@
     </div>
   </main>
 
+  <!-- Datalist for searchable exercise names -->
+  <datalist id="exerciseList"></datalist>
+
   <div class="modal-overlay" id="exerciseModal">
     <div class="modal">
       <button class="modal-close" id="closeModal">×</button>
       <h3>Add Exercise</h3>
       <div class="field">
-        <label for="modalExercise">Exercise</label>
-        <select id="modalExercise"></select>
+        <label for="modalExerciseSearch">Exercise</label>
+        <input type="text" id="modalExerciseSearch" list="exerciseList" placeholder="Search exercise" required />
+        <input type="hidden" id="modalExerciseId" />
       </div>
       <div id="setContainer"></div>
       <button type="button" class="secondary-btn" id="addSet">+ Add Set</button>
@@ -114,44 +115,35 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(
       'https://mgskqqwxvnxyasuksxvp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2txcXd4dm54eWFzdWtzeHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjc0NTQsImV4cCI6MjA2MTg0MzQ1NH0.BOqV1UvJIA5EzP9FsFWoI_F229nswzmG5WHkXdz4ItI'
+      'YOUR_ANON_KEY'
     );
     let exercises = [];
-    let exerciseChoice;
-    let workoutEntries = [];
+    const workoutEntries = [];
     let userId = null;
 
     document.addEventListener('DOMContentLoaded', init);
 
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return window.location.replace('login.html');
+      if (!session) return location.replace('login.html');
       userId = session.user.id;
 
       const { data, error } = await supabase.from('exercises').select('id, exercise_name');
       if (error) return console.error(error);
-      exercises = data;
+      // Sort alphabetically
+      exercises = data.sort((a,b) => a.exercise_name.localeCompare(b.exercise_name));
 
-      const sel = document.getElementById('modalExercise');
+      // Populate datalist
+      const dl = document.getElementById('exerciseList');
       exercises.forEach(e => {
-        const opt = document.createElement('option'); opt.value = e.id; opt.textContent = e.exercise_name;
-        sel.appendChild(opt);
-      });
-
-      exerciseChoice = new Choices(sel, {
-        searchEnabled: true,
-        itemSelectText: '',
-        placeholderValue: 'Search exercise',
-        shouldSort: false
+        const opt = document.createElement('option');
+        opt.value = e.exercise_name;
+        dl.appendChild(opt);
       });
 
       document.getElementById('addExercise').addEventListener('click', () => {
         document.getElementById('exerciseModal').style.display = 'flex';
-        exerciseChoice.clearChoices();
-        exerciseChoice.setChoices(
-          exercises.map(e => ({ value: e.id, label: e.exercise_name })),
-          'value', 'label', true
-        );
+        document.getElementById('modalExerciseSearch').value = '';
         document.getElementById('setContainer').innerHTML = '';
         addSetRow();
       });
@@ -159,6 +151,12 @@
       document.getElementById('closeModal').addEventListener('click', () => {
         document.getElementById('exerciseModal').style.display = 'none';
       });
+
+      document.getElementById('modalExerciseSearch').addEventListener('change', e => {
+        const ex = exercises.find(x => x.exercise_name === e.target.value);
+        document.getElementById('modalExerciseId').value = ex ? ex.id : '';
+      });
+
       document.getElementById('addSet').addEventListener('click', addSetRow);
       document.getElementById('saveExercise').addEventListener('click', saveExercise);
       document.getElementById('logForm').addEventListener('submit', handleSubmit);
@@ -177,14 +175,15 @@
     }
 
     function saveExercise() {
-      const exerciseId = exerciseChoice.getValue(true);
-      if (!exerciseId) return alert('Select an exercise');
+      const name = document.getElementById('modalExerciseSearch').value;
+      const id = document.getElementById('modalExerciseId').value;
+      if (!id) return alert('Please select a valid exercise from the list.');
       const sets = Array.from(document.querySelectorAll('.set-row')).map(r => {
-        const [w, rp] = r.querySelectorAll('input');
+        const [w,rp] = r.querySelectorAll('input');
         return { weight: parseFloat(w.value), reps: parseInt(rp.value, 10) };
       });
-      const entry = { exercise_id: exerciseId, set_count: sets.length };
-      sets.forEach((s, i) => { entry[`weight_set${i+1}`] = s.weight; entry[`reps_set${i+1}`] = s.reps; });
+      const entry = { exercise_id: id, set_count: sets.length };
+      sets.forEach((s,i) => { entry[`weight_set${i+1}`] = s.weight; entry[`reps_set${i+1}`] = s.reps; });
       workoutEntries.push(entry);
       renderEntries();
       document.getElementById('exerciseModal').style.display = 'none';
@@ -210,7 +209,7 @@
         .insert({ user_id: userId, type, date, notes }).select('id').single();
       if (error) return alert('Workout save failed');
       const { error: e2 } = await supabase.from('workout_entries')
-        .insert(workoutEntries.map(en=>({ workout_id:w.id, ...en })));
+        .insert(workoutEntries.map(en=>({ workout_id: w.id, ...en })));
       if (e2) return alert('Entries save failed');
       document.getElementById('logForm').reset();
       document.getElementById('entries').innerHTML = '';
